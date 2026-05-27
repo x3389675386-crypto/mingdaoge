@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Review } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /** Context 值接口 */
 interface ReviewContextValue {
@@ -38,6 +38,12 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
+
+      if (!isSupabaseConfigured) {
+        setReviews([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('reviews')
         .select('*')
@@ -46,7 +52,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setReviews((data || []).map(mapDbToReview));
     } catch (err) {
-      console.error('Failed to load reviews:', err);
+      console.error('[明道阁] 加载晒图失败:', err);
     } finally {
       setLoading(false);
     }
@@ -57,6 +63,19 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
+    if (!isSupabaseConfigured) {
+      const newReview: Review = {
+        id: Date.now(),
+        nickname: review.nickname,
+        content: review.content,
+        imageUrl: review.imageUrl,
+        productId: review.productId,
+        createdAt: new Date().toISOString(),
+      };
+      setReviews((prev) => [newReview, ...prev]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('reviews')
       .insert({
@@ -75,6 +94,11 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteReview = async (id: number) => {
+    if (!isSupabaseConfigured) {
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+      return;
+    }
+
     const { error } = await supabase
       .from('reviews')
       .delete()

@@ -14,7 +14,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import type { Product, ProductCategory } from '../../types';
-import { supabase } from '../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 /** 图片大小限制 10MB */
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -65,6 +65,10 @@ const fieldSx = {
 
 /** 上传图片到 Supabase Storage */
 async function uploadImage(file: File, productId: number): Promise<string> {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase 未配置，无法上传图片。请检查环境变量。');
+  }
+
   const ext = file.name.split('.').pop() || 'jpg';
   const filePath = `products/${productId}-${Date.now()}.${ext}`;
 
@@ -72,7 +76,10 @@ async function uploadImage(file: File, productId: number): Promise<string> {
     .from('images')
     .upload(filePath, file, { upsert: true });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    console.error('[明道阁] 图片上传失败:', uploadError);
+    throw new Error('上传失败: ' + uploadError.message);
+  }
 
   const { data } = supabase.storage.from('images').getPublicUrl(filePath);
   return data.publicUrl;
@@ -137,7 +144,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
       updateField('imageUrl', imageUrl);
     } catch (err) {
       console.error('图片上传失败:', err);
-      setImageError('图片上传失败，请重试');
+      setImageError('图片上传失败：' + (err instanceof Error ? err.message : '请重试'));
     } finally {
       setUploading(false);
     }

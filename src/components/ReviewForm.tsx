@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useReviews } from '../context/ReviewContext';
 import { useProducts } from '../context/ProductContext';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /** 图片大小限制 10MB */
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -76,19 +76,25 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
       setImageUrl(localUrl);
 
       // 上传到 Supabase Storage
+      if (!isSupabaseConfigured) {
+        throw new Error('Supabase 未配置，无法上传图片');
+      }
       const ext = file.name.split('.').pop() || 'jpg';
       const filePath = `reviews/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('[明道阁] 晒图上传失败:', uploadError);
+        throw new Error(uploadError.message);
+      }
 
       const { data } = supabase.storage.from('images').getPublicUrl(filePath);
       setImageUrl(data.publicUrl);
     } catch (err) {
       console.error('图片上传失败:', err);
-      setImageError('图片上传失败，请重试');
+      setImageError('图片上传失败：' + (err instanceof Error ? err.message : '请重试'));
       setImageUrl(undefined);
     } finally {
       setUploading(false);

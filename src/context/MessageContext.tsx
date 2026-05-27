@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Message } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /** Context 值接口 */
 interface MessageContextValue {
@@ -42,6 +42,12 @@ export function MessageProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
+
+      if (!isSupabaseConfigured) {
+        setMessages([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -50,7 +56,7 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setMessages((data || []).map(mapDbToMessage));
     } catch (err) {
-      console.error('Failed to load messages:', err);
+      console.error('[明道阁] 加载留言失败:', err);
     } finally {
       setLoading(false);
     }
@@ -61,6 +67,19 @@ export function MessageProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const addMessage = async (msg: Omit<Message, 'id' | 'createdAt' | 'read'>) => {
+    if (!isSupabaseConfigured) {
+      const newMsg: Message = {
+        id: Date.now(),
+        name: msg.name,
+        contact: msg.contact,
+        message: msg.message,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      setMessages((prev) => [newMsg, ...prev]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -79,6 +98,11 @@ export function MessageProvider({ children }: { children: ReactNode }) {
   };
 
   const markRead = async (id: number) => {
+    if (!isSupabaseConfigured) {
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)));
+      return;
+    }
+
     const { error } = await supabase
       .from('messages')
       .update({ is_read: true })
@@ -92,6 +116,11 @@ export function MessageProvider({ children }: { children: ReactNode }) {
   };
 
   const markUnread = async (id: number) => {
+    if (!isSupabaseConfigured) {
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: false } : m)));
+      return;
+    }
+
     const { error } = await supabase
       .from('messages')
       .update({ is_read: false })
@@ -105,6 +134,11 @@ export function MessageProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteMessage = async (id: number) => {
+    if (!isSupabaseConfigured) {
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      return;
+    }
+
     const { error } = await supabase
       .from('messages')
       .delete()
