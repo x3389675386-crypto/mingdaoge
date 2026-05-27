@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -23,9 +23,12 @@ import ForumIcon from '@mui/icons-material/Forum';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
 import CommentIcon from '@mui/icons-material/Comment';
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 import { useForum } from '../context/ForumContext';
 import { useComments } from '../context/CommentContext';
 import { FORUM_CATEGORIES, type ForumCategory, type ForumPost } from '../types';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
@@ -50,9 +53,12 @@ export default function ForumPage() {
     title: '',
     content: '',
     category: 'paranormal' as ForumCategory,
+    imageFile: null as File | null,
+    imagePreview: null as string | null,
   });
   const [titleError, setTitleError] = useState(false);
   const [contentError, setContentError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
     open: false,
     message: '',
@@ -91,14 +97,44 @@ export default function ForumPage() {
     if (!valid) return;
 
     try {
+      let imageUrl: string | undefined;
+
+      // 处理图片上传
+      if (newPost.imageFile) {
+        if (isSupabaseConfigured) {
+          // Supabase Storage 上传
+          const fileExt = newPost.imageFile.name.split('.').pop() || 'jpg';
+          const filePath = `forum_${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(filePath, newPost.imageFile);
+          if (uploadError) {
+            console.error('[明道阁] 图片上传失败:', uploadError);
+            setSnackbar({ open: true, message: `图片上传失败：${uploadError.message}`, severity: 'error' });
+            return;
+          }
+          const { data: urlData } = supabase.storage.from('images').getPublicUrl(filePath);
+          imageUrl = urlData.publicUrl;
+        } else {
+          // 本地降级：FileReader 转 base64
+          imageUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('图片读取失败'));
+            reader.readAsDataURL(newPost.imageFile!);
+          });
+        }
+      }
+
       await addPost({
         author: newPost.author.trim() || '匿名道友',
         title: newPost.title.trim(),
         content: newPost.content.trim(),
         category: newPost.category,
+        imageUrl,
       });
       setDialogOpen(false);
-      setNewPost({ author: '', title: '', content: '', category: 'paranormal' });
+      setNewPost({ author: '', title: '', content: '', category: 'paranormal', imageFile: null, imagePreview: null });
       setTitleError(false);
       setContentError(false);
       // 发帖成功时检查是否有过滤警告
@@ -267,6 +303,20 @@ export default function ForumPage() {
                     </Box>
 
                     {/* 内容（截断展示） */}
+                    {post.imageUrl && (
+                      <Box
+                        component="img"
+                        src={post.imageUrl}
+                        sx={{
+                          width: '100%',
+                          maxHeight: 200,
+                          objectFit: 'cover',
+                          borderRadius: '4px',
+                          mb: 1,
+                          mt: 1,
+                        }}
+                      />
+                    )}
                     <Typography
                       sx={{
                         fontFamily: 'var(--font-serif)',
@@ -330,7 +380,10 @@ export default function ForumPage() {
       {/* 发帖弹窗 */}
       <Dialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          setNewPost({ author: '', title: '', content: '', category: 'paranormal', imageFile: null, imagePreview: null });
+        }}
         maxWidth="sm"
         fullWidth
         sx={{
@@ -437,6 +490,81 @@ export default function ForumPage() {
                 '& .MuiInputLabel-root': { fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.5)' },
               }}
             />
+
+            {/* 图片上传区域 */}
+            <Box>
+              {newPost.imagePreview ? (
+                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                  <Box
+                    component="img"
+                    src={newPost.imagePreview}
+                    sx={{
+                      height: 100,
+                      borderRadius: '4px',
+                      objectFit: 'cover',
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setNewPost((prev) => ({ ...prev, imageFile: null, imagePreview: null }));
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      color: '#f5f0eb',
+                      width: 24,
+                      height: 24,
+                      '&:hover': { backgroundColor: 'rgba(192,57,43,0.8)' },
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: '0.85rem' }} />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  startIcon={<ImageIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{
+                    borderColor: 'rgba(201,169,110,0.3)',
+                    color: 'rgba(201,169,110,0.7)',
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: '0.85rem',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: 'rgba(201,169,110,0.5)',
+                      backgroundColor: 'rgba(201,169,110,0.08)',
+                    },
+                  }}
+                >
+                  添加图片
+                </Button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  // 文件大小限制 10MB
+                  if (file.size > 10 * 1024 * 1024) {
+                    setSnackbar({ open: true, message: '图片大小不能超过10MB', severity: 'warning' });
+                    e.target.value = '';
+                    return;
+                  }
+                  const preview = URL.createObjectURL(file);
+                  setNewPost((prev) => ({ ...prev, imageFile: file, imagePreview: preview }));
+                }}
+              />
+            </Box>
 
             {/* 发帖按钮 */}
             <Button

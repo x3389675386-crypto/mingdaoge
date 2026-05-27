@@ -169,6 +169,21 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
           </Box>
         </Box>
 
+        {/* 帖子图片 */}
+        {post.imageUrl && (
+          <Box
+            component="img"
+            src={post.imageUrl}
+            sx={{
+              width: '100%',
+              maxHeight: 400,
+              objectFit: 'contain',
+              borderRadius: '4px',
+              mb: 2,
+            }}
+          />
+        )}
+
         {/* 完整内容 */}
         <Typography
           sx={{

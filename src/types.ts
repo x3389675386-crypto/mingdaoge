@@ -124,6 +124,8 @@ export interface ForumPost {
   category: string;
   /** 创建时间 ISO 字符串 */
   createdAt: string;
+  /** 帖子图片URL */
+  imageUrl?: string;
 }
 
 /** 论坛分类 */

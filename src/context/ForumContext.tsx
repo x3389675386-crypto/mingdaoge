@@ -30,6 +30,7 @@ function mapDbToPost(row: Record<string, unknown>): ForumPost {
     content: (row.content as string) || '',
     category: (row.category as string) || 'chat',
     createdAt: row.created_at as string,
+    imageUrl: (row.image_url as string) || undefined,
   };
 }
 
@@ -108,19 +109,25 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         content: finalContent,
         category: post.category,
         createdAt: new Date().toISOString(),
+        imageUrl: post.imageUrl,
       };
       setPosts((prev) => [newPost, ...prev]);
       return;
     }
 
+    const insertData: Record<string, unknown> = {
+      author: finalAuthor || '匿名',
+      title: finalTitle,
+      content: finalContent,
+      category: post.category,
+    };
+    if (post.imageUrl) {
+      insertData.image_url = post.imageUrl;
+    }
+
     const { data, error } = await supabase
       .from('forum_posts')
-      .insert({
-        author: finalAuthor || '匿名',
-        title: finalTitle,
-        content: finalContent,
-        category: post.category,
-      })
+      .insert(insertData)
       .select()
       .single();
 
