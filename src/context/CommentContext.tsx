@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
@@ -81,6 +82,11 @@ export function CommentProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
+
+  // 页面加载时从 Supabase 拉取评论，确保所有人都能看到
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const commentsByPostId = useCallback(
     (postId: number): ForumComment[] => {
