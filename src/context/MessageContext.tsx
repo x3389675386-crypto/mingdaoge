@@ -1,117 +1,125 @@
-import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from 'react';
-import type { MessageState, MessageAction, Message } from '../types';
-
-/** localStorage 存储键 */
-const STORAGE_KEY = 'mingdao_messages';
-
-/** 从 localStorage 读取留言数据 */
-function loadMessages(): Message[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed: Message[] = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch {
-    // 解析失败则返回空数组
-  }
-  return [];
-}
-
-/** 保存到 localStorage */
-function saveMessages(messages: Message[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-}
-
-/** Reducer */
-function messageReducer(state: MessageState, action: MessageAction): MessageState {
-  let newMessages: Message[];
-
-  switch (action.type) {
-    case 'ADD_MESSAGE':
-      newMessages = [action.payload, ...state.messages];
-      break;
-
-    case 'MARK_READ':
-      newMessages = state.messages.map((m) =>
-        m.id === action.payload ? { ...m, read: true } : m
-      );
-      break;
-
-    case 'MARK_UNREAD':
-      newMessages = state.messages.map((m) =>
-        m.id === action.payload ? { ...m, read: false } : m
-      );
-      break;
-
-    case 'DELETE_MESSAGE':
-      newMessages = state.messages.filter((m) => m.id !== action.payload);
-      break;
-
-    default:
-      return state;
-  }
-
-  saveMessages(newMessages);
-  return { messages: newMessages };
-}
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { Message } from '../types';
+import { supabase } from '../lib/supabase';
 
 /** Context 值接口 */
 interface MessageContextValue {
-  state: MessageState;
-  dispatch: Dispatch<MessageAction>;
-  /** 所有留言 */
   messages: Message[];
+  loading: boolean;
   /** 新增留言 */
-  addMessage: (message: Omit<Message, 'id' | 'createdAt' | 'read'>) => void;
+  addMessage: (message: Omit<Message, 'id' | 'createdAt' | 'read'>) => Promise<void>;
   /** 标记已读 */
-  markRead: (id: number) => void;
+  markRead: (id: number) => Promise<void>;
   /** 标记未读 */
-  markUnread: (id: number) => void;
+  markUnread: (id: number) => Promise<void>;
   /** 删除留言 */
-  deleteMessage: (id: number) => void;
+  deleteMessage: (id: number) => Promise<void>;
   /** 未读留言数 */
   unreadCount: number;
+  /** 刷新数据 */
+  refresh: () => Promise<void>;
 }
 
 const MessageContext = createContext<MessageContextValue | null>(null);
 
+/** 数据库行 → 前端 Message 对象 */
+function mapDbToMessage(row: Record<string, unknown>): Message {
+  return {
+    id: row.id as number,
+    name: row.name as string,
+    contact: row.contact as string,
+    message: (row.message as string) || '',
+    createdAt: row.created_at as string,
+    read: (row.is_read as boolean) || false,
+  };
+}
+
 /** Provider 组件 */
 export function MessageProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(messageReducer, { messages: loadMessages() });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const messages = state.messages;
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const addMessage = (msg: Omit<Message, 'id' | 'createdAt' | 'read'>) => {
-    const maxId = messages.reduce((max, m) => Math.max(max, m.id), 0);
-    const newMessage: Message = {
-      ...msg,
-      id: maxId + 1,
-      createdAt: new Date().toISOString(),
-      read: false,
-    };
-    dispatch({ type: 'ADD_MESSAGE', payload: newMessage });
+      if (error) throw error;
+      setMessages((data || []).map(mapDbToMessage));
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const addMessage = async (msg: Omit<Message, 'id' | 'createdAt' | 'read'>) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        name: msg.name,
+        contact: msg.contact,
+        message: msg.message,
+        is_read: false,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const newMessage = mapDbToMessage(data as Record<string, unknown>);
+    setMessages((prev) => [newMessage, ...prev]);
   };
 
-  const markRead = (id: number) => {
-    dispatch({ type: 'MARK_READ', payload: id });
+  const markRead = async (id: number) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, read: true } : m))
+    );
   };
 
-  const markUnread = (id: number) => {
-    dispatch({ type: 'MARK_UNREAD', payload: id });
+  const markUnread = async (id: number) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_read: false })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, read: false } : m))
+    );
   };
 
-  const deleteMessage = (id: number) => {
-    dispatch({ type: 'DELETE_MESSAGE', payload: id });
+  const deleteMessage = async (id: number) => {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setMessages((prev) => prev.filter((m) => m.id !== id));
   };
 
   const unreadCount = messages.filter((m) => !m.read).length;
 
   return (
     <MessageContext.Provider
-      value={{ state, dispatch, messages, addMessage, markRead, markUnread, deleteMessage, unreadCount }}
+      value={{ messages, loading, addMessage, markRead, markUnread, deleteMessage, unreadCount, refresh }}
     >
       {children}
     </MessageContext.Provider>

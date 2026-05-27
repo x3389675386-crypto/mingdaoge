@@ -29,7 +29,7 @@ const categoryLabel: Record<string, string> = {
 };
 
 export default function ProductTable() {
-  const { allProducts, dispatch, nextId } = useProducts();
+  const { allProducts, addProduct, updateProduct, deleteProduct, toggleStatus } = useProducts();
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
@@ -50,18 +50,28 @@ export default function ProductTable() {
   };
 
   /** 保存（新增或更新） */
-  const handleSave = (product: Product) => {
-    if (isNew) {
-      dispatch({ type: 'ADD_PRODUCT', payload: { ...product, id: nextId(), status: 'active' } });
-    } else {
-      dispatch({ type: 'UPDATE_PRODUCT', payload: product });
+  const handleSave = async (product: Product) => {
+    try {
+      if (isNew) {
+        await addProduct({ ...product, status: 'active' });
+      } else {
+        await updateProduct(product);
+      }
+    } catch (err) {
+      console.error('保存失败:', err);
+      alert('保存失败，请重试');
     }
   };
 
   /** 删除确认 */
-  const handleDelete = (id: number) => {
-    dispatch({ type: 'DELETE_PRODUCT', payload: id });
-    setDeleteConfirmId(null);
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteProduct(id);
+      setDeleteConfirmId(null);
+    } catch (err) {
+      console.error('删除失败:', err);
+      alert('删除失败，请重试');
+    }
   };
 
   return (
@@ -196,7 +206,7 @@ export default function ProductTable() {
                 <TableCell>
                   <Switch
                     checked={product.status === 'active'}
-                    onChange={() => dispatch({ type: 'TOGGLE_STATUS', payload: product.id })}
+                    onChange={() => toggleStatus(product.id)}
                     size="small"
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': { color: '#c9a96e' },

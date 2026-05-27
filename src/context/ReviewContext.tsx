@@ -1,85 +1,88 @@
-import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from 'react';
-import type { ReviewState, ReviewAction, Review } from '../types';
-
-/** localStorage 存储键 */
-const STORAGE_KEY = 'mingdao_reviews';
-
-/** 从 localStorage 读取晒图数据 */
-function loadReviews(): Review[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed: Review[] = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch {
-    // 解析失败则返回空数组
-  }
-  return [];
-}
-
-/** 保存到 localStorage */
-function saveReviews(reviews: Review[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
-}
-
-/** Reducer */
-function reviewReducer(state: ReviewState, action: ReviewAction): ReviewState {
-  let newReviews: Review[];
-
-  switch (action.type) {
-    case 'ADD_REVIEW':
-      newReviews = [action.payload, ...state.reviews];
-      break;
-
-    case 'DELETE_REVIEW':
-      newReviews = state.reviews.filter((r) => r.id !== action.payload);
-      break;
-
-    default:
-      return state;
-  }
-
-  saveReviews(newReviews);
-  return { reviews: newReviews };
-}
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { Review } from '../types';
+import { supabase } from '../lib/supabase';
 
 /** Context 值接口 */
 interface ReviewContextValue {
-  state: ReviewState;
-  dispatch: Dispatch<ReviewAction>;
-  /** 所有晒图 */
   reviews: Review[];
+  loading: boolean;
   /** 新增晒图 */
-  addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
+  addReview: (review: Omit<Review, 'id' | 'createdAt'>) => Promise<void>;
   /** 删除晒图 */
-  deleteReview: (id: number) => void;
+  deleteReview: (id: number) => Promise<void>;
   /** 获取指定产品的晒图 */
   productReviews: (productId: number) => Review[];
+  /** 刷新数据 */
+  refresh: () => Promise<void>;
 }
 
 const ReviewContext = createContext<ReviewContextValue | null>(null);
 
+/** 数据库行 → 前端 Review 对象 */
+function mapDbToReview(row: Record<string, unknown>): Review {
+  return {
+    id: row.id as number,
+    nickname: row.nickname as string,
+    content: (row.content as string) || '',
+    imageUrl: (row.image_url as string) || undefined,
+    productId: (row.product_id as number) || undefined,
+    createdAt: row.created_at as string,
+  };
+}
+
 /** Provider 组件 */
 export function ReviewProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reviewReducer, { reviews: loadReviews() });
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const reviews = state.reviews;
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const addReview = (review: Omit<Review, 'id' | 'createdAt'>) => {
-    const maxId = reviews.reduce((max, r) => Math.max(max, r.id), 0);
-    const newReview: Review = {
-      ...review,
-      id: maxId + 1,
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_REVIEW', payload: newReview });
+      if (error) throw error;
+      setReviews((data || []).map(mapDbToReview));
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({
+        nickname: review.nickname,
+        content: review.content,
+        image_url: review.imageUrl || null,
+        product_id: review.productId || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const newReview = mapDbToReview(data as Record<string, unknown>);
+    setReviews((prev) => [newReview, ...prev]);
   };
 
-  const deleteReview = (id: number) => {
-    dispatch({ type: 'DELETE_REVIEW', payload: id });
+  const deleteReview = async (id: number) => {
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setReviews((prev) => prev.filter((r) => r.id !== id));
   };
 
   const productReviews = (productId: number): Review[] => {
@@ -88,7 +91,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
 
   return (
     <ReviewContext.Provider
-      value={{ state, dispatch, reviews, addReview, deleteReview, productReviews }}
+      value={{ reviews, loading, addReview, deleteReview, productReviews, refresh }}
     >
       {children}
     </ReviewContext.Provider>

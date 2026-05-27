@@ -17,6 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useReviews } from '../context/ReviewContext';
 import { useProducts } from '../context/ProductContext';
+import { supabase } from '../lib/supabase';
 
 /** 图片大小限制 10MB */
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -39,6 +40,7 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
   const [contentError, setContentError] = useState(false);
   const [imageError, setImageError] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   /** 重置表单 */
   const resetForm = () => {
@@ -56,7 +58,7 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -66,11 +68,31 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
     }
 
     setImageError('');
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setUploading(true);
+
+    try {
+      // 本地预览
+      const localUrl = URL.createObjectURL(file);
+      setImageUrl(localUrl);
+
+      // 上传到 Supabase Storage
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filePath = `reviews/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+      setImageUrl(data.publicUrl);
+    } catch (err) {
+      console.error('图片上传失败:', err);
+      setImageError('图片上传失败，请重试');
+      setImageUrl(undefined);
+    } finally {
+      setUploading(false);
+    }
 
     // 重置 file input 以便重复选择同一文件
     e.target.value = '';
@@ -231,6 +253,7 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
                   variant="outlined"
                   startIcon={<PhotoCameraIcon />}
                   onClick={handleImageSelect}
+                  disabled={uploading}
                   sx={{
                     borderColor: 'rgba(201,169,110,0.3)',
                     color: '#c9a96e',

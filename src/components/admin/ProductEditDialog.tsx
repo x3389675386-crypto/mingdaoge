@@ -14,6 +14,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import type { Product, ProductCategory } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 /** 图片大小限制 10MB */
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -62,6 +63,21 @@ const fieldSx = {
   },
 };
 
+/** 上传图片到 Supabase Storage */
+async function uploadImage(file: File, productId: number): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const filePath = `products/${productId}-${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('images')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+  return data.publicUrl;
+}
+
 export default function ProductEditDialog({ product, open, onClose, onSave }: ProductEditDialogProps) {
   const isNew = !product;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +101,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
   const [nameError, setNameError] = useState(false);
   const [priceError, setPriceError] = useState(false);
   const [imageError, setImageError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   /** 更新表单字段 */
   const updateField = <K extends keyof Product>(key: K, value: Product[K]) => {
@@ -98,7 +115,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -108,11 +125,22 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
     }
 
     setImageError('');
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateField('imageUrl', reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setUploading(true);
+
+    try {
+      // 先用本地预览
+      const localUrl = URL.createObjectURL(file);
+      updateField('imageUrl', localUrl);
+
+      // 上传到 Supabase Storage
+      const imageUrl = await uploadImage(file, form.id || Date.now());
+      updateField('imageUrl', imageUrl);
+    } catch (err) {
+      console.error('图片上传失败:', err);
+      setImageError('图片上传失败，请重试');
+    } finally {
+      setUploading(false);
+    }
 
     // 重置 file input 以便重复选择同一文件
     e.target.value = '';
@@ -193,6 +221,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
                     variant="outlined"
                     startIcon={<PhotoCameraIcon />}
                     onClick={handleImageSelect}
+                    disabled={uploading}
                     sx={{
                       borderColor: 'rgba(201,169,110,0.3)',
                       color: '#c9a96e',
@@ -201,13 +230,14 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
                       '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
                     }}
                   >
-                    替换图片
+                    {uploading ? '上传中...' : '替换图片'}
                   </Button>
                   <Button
                     size="small"
                     variant="text"
                     startIcon={<DeleteOutlineIcon />}
                     onClick={handleRemoveImage}
+                    disabled={uploading}
                     sx={{
                       color: 'rgba(192,57,43,0.6)',
                       fontFamily: 'var(--font-serif)',
@@ -249,6 +279,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
                   variant="outlined"
                   startIcon={<PhotoCameraIcon />}
                   onClick={handleImageSelect}
+                  disabled={uploading}
                   sx={{
                     borderColor: 'rgba(201,169,110,0.3)',
                     color: '#c9a96e',
@@ -257,7 +288,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
                     '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
                   }}
                 >
-                  上传图片
+                  {uploading ? '上传中...' : '上传图片'}
                 </Button>
               </Box>
             )}
@@ -410,6 +441,7 @@ export default function ProductEditDialog({ product, open, onClose, onSave }: Pr
             fullWidth
             variant="contained"
             onClick={handleSave}
+            disabled={uploading}
             sx={{
               backgroundColor: 'rgba(201,169,110,0.85)',
               color: '#1a1a2e',
