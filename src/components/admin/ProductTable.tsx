@@ -59,8 +59,13 @@ export default function ProductTable() {
       }
     } catch (err) {
       console.error('保存失败:', err);
-      const msg = err instanceof Error ? err.message : '未知错误';
-      alert('保存失败：' + msg);
+      let msg = '未知错误';
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (err && typeof err === 'object') {
+        msg = JSON.stringify(err);
+      }
+      alert('保存失败：' + msg + '\n\n如果提示签名错误，请检查 Vercel 环境变量中的 VITE_SUPABASE_ANON_KEY 是否完整复制。');
     }
   };
 
