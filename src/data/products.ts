@@ -114,4 +114,7 @@ export const categoryLabels: Record<string, string> = {
   wood: '木质',
   bodhi: '菩提',
   agarwood: '沉香',
+  handcard: '手牌',
+  perfume: '香水',
+  talisman: '符卡',
 };

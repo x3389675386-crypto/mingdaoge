@@ -31,6 +31,9 @@ const categoryOptions: { value: ProductCategory; label: string }[] = [
   { value: 'wood', label: '木质' },
   { value: 'bodhi', label: '菩提' },
   { value: 'agarwood', label: '沉香' },
+  { value: 'handcard', label: '手牌' },
+  { value: 'perfume', label: '香水' },
+  { value: 'talisman', label: '符卡' },
 ];
 
 /** 渐变色预设 */
