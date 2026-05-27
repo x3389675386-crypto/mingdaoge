@@ -4,33 +4,51 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { CloudPattern } from './ChinesePattern';
 
 /** 导航链接列表 */
 const navLinks = [
-  { label: '首页', href: '#hero' },
-  { label: '产品', href: '#products' },
+  { label: '首页', href: '#hero', sectionId: 'hero' },
+  { label: '产品', href: '#products', sectionId: 'products' },
   { label: '论坛', href: '/forum', isRoute: true },
-  { label: '关于', href: '#about' },
-  { label: '联系', href: '#footer' },
+  { label: '关于', href: '#about', sectionId: 'about' },
+  { label: '联系', href: '#footer', sectionId: 'footer' },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, dispatch } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleNavClick = (href: string, isRoute?: boolean) => {
+  /** 滚动到指定 section */
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      return true;
+    }
+    return false;
+  };
+
+  const handleNavClick = (href: string, isRoute?: boolean, sectionId?: string) => {
     setMobileOpen(false);
     if (isRoute) {
       navigate(href);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (location.pathname !== '/') {
+      // 在非首页（如论坛页），先跳回首页，等渲染完再滚动
+      navigate('/');
+      setTimeout(() => {
+        if (sectionId) scrollToSection(sectionId);
+      }, 300);
     } else {
-      const el = document.querySelector(href);
-      el?.scrollIntoView({ behavior: 'smooth' });
+      // 在首页，直接滚动
+      if (sectionId) scrollToSection(sectionId);
     }
   };
 
@@ -50,7 +68,7 @@ export default function Navbar() {
           <a
             href="#hero"
             className="flex items-center gap-2 no-underline"
-            onClick={(e) => { e.preventDefault(); handleNavClick('#hero'); }}
+            onClick={(e) => { e.preventDefault(); handleNavClick('#hero', false, 'hero'); }}
           >
             <span
               className="text-2xl md:text-3xl text-gold"
@@ -70,7 +88,7 @@ export default function Navbar() {
                 <a
                   key={link.href}
                   href={link.isRoute ? link.href : undefined}
-                  onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute); }}
+                  onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute, link.sectionId); }}
                   className="text-jade-white/70 hover:text-gold transition-colors duration-300 text-sm tracking-wider no-underline relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-px after:bg-gold after:transition-all after:duration-300 hover:after:w-full"
                 >
                   {link.label}
@@ -157,7 +175,7 @@ export default function Navbar() {
               key={link.href}
               component="a"
               href={link.isRoute ? link.href : undefined}
-              onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute); }}
+              onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute, link.sectionId); }}
               sx={{
                 cursor: 'pointer',
                 '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },
