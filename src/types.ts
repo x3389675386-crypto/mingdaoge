@@ -109,3 +109,29 @@ export interface ReviewState {
 export type ReviewAction =
   | { type: 'ADD_REVIEW'; payload: Review }
   | { type: 'DELETE_REVIEW'; payload: number };
+
+/** 论坛帖子接口 */
+export interface ForumPost {
+  /** 帖子唯一ID */
+  id: number;
+  /** 作者昵称 */
+  author: string;
+  /** 帖子标题 */
+  title: string;
+  /** 帖子内容 */
+  content: string;
+  /** 分类 */
+  category: string;
+  /** 创建时间 ISO 字符串 */
+  createdAt: string;
+}
+
+/** 论坛分类 */
+export const FORUM_CATEGORIES = [
+  { value: 'paranormal', label: '灵异事件大全', icon: '👻' },
+  { value: 'handcraft', label: '手串手作', icon: '📿' },
+  { value: 'culture', label: '国风文化', icon: '🏯' },
+  { value: 'chat', label: '闲聊灌水', icon: '💬' },
+] as const;
+
+export type ForumCategory = typeof FORUM_CATEGORIES[number]['value'];

@@ -12,6 +12,7 @@ import { CloudPattern } from './ChinesePattern';
 const navLinks = [
   { label: '首页', href: '#hero' },
   { label: '产品', href: '#products' },
+  { label: '论坛', href: '/forum', isRoute: true },
   { label: '关于', href: '#about' },
   { label: '联系', href: '#footer' },
 ];
@@ -23,10 +24,14 @@ export default function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, isRoute?: boolean) => {
     setMobileOpen(false);
-    const el = document.querySelector(href);
-    el?.scrollIntoView({ behavior: 'smooth' });
+    if (isRoute) {
+      navigate(href);
+    } else {
+      const el = document.querySelector(href);
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
@@ -64,8 +69,8 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <a
                   key={link.href}
-                  href={link.href}
-                  onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
+                  href={link.isRoute ? link.href : undefined}
+                  onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute); }}
                   className="text-jade-white/70 hover:text-gold transition-colors duration-300 text-sm tracking-wider no-underline relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-px after:bg-gold after:transition-all after:duration-300 hover:after:w-full"
                 >
                   {link.label}
@@ -151,8 +156,8 @@ export default function Navbar() {
             <ListItem
               key={link.href}
               component="a"
-              href={link.href}
-              onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
+              href={link.isRoute ? link.href : undefined}
+              onClick={(e) => { e.preventDefault(); handleNavClick(link.href, link.isRoute); }}
               sx={{
                 cursor: 'pointer',
                 '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },

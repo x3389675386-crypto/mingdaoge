@@ -5,6 +5,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
 import { MessageProvider } from './context/MessageContext';
 import { ReviewProvider } from './context/ReviewContext';
+import { ForumProvider } from './context/ForumContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
@@ -12,6 +13,7 @@ import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import About from './components/About';
 import ReviewSection from './components/ReviewSection';
+import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
 import type { Product } from './types';
@@ -81,12 +83,15 @@ export default function App() {
       <ProductProvider>
         <ReviewProvider>
           <MessageProvider>
-            <CartProvider>
-              <Routes>
-                <Route path="/" element={<FrontPage />} />
-                <Route path="/admin" element={<AdminPanel />} />
-              </Routes>
-            </CartProvider>
+            <ForumProvider>
+              <CartProvider>
+                <Routes>
+                  <Route path="/" element={<FrontPage />} />
+                  <Route path="/forum" element={<ForumPage />} />
+                  <Route path="/admin" element={<AdminPanel />} />
+                </Routes>
+              </CartProvider>
+            </ForumProvider>
           </MessageProvider>
         </ReviewProvider>
       </ProductProvider>
