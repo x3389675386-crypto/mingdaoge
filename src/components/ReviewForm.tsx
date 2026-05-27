@@ -18,8 +18,8 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useReviews } from '../context/ReviewContext';
 import { useProducts } from '../context/ProductContext';
 
-/** 图片大小限制 500KB */
-const MAX_IMAGE_SIZE = 500 * 1024;
+/** 图片大小限制 10MB */
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 interface ReviewFormProps {
   open: boolean;
@@ -61,7 +61,7 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
     if (!file) return;
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setImageError('图片过大，请选择500KB以内的图片');
+      setImageError('图片过大，请选择10MB以内的图片');
       return;
     }
 
