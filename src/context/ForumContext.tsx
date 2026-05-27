@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { ForumPost, ForumCategory } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
 
 /** Context 值接口 */
 interface ForumContextValue {
@@ -14,6 +15,8 @@ interface ForumContextValue {
   postsByCategory: (category: ForumCategory) => ForumPost[];
   /** 刷新数据 */
   refresh: () => Promise<void>;
+  /** 最后一次过滤警告 */
+  lastWarning: string | null;
 }
 
 const ForumContext = createContext<ForumContextValue | null>(null);
@@ -34,6 +37,7 @@ function mapDbToPost(row: Record<string, unknown>): ForumPost {
 export function ForumProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastWarning, setLastWarning] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -63,12 +67,45 @@ export function ForumProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const addPost = async (post: Omit<ForumPost, 'id' | 'createdAt'>) => {
+    // 文明用词过滤 - 标题
+    const titleFilter = containsProfanity(post.title);
+    if (!titleFilter.clean) {
+      const warning = getProfanityWarning(post.title);
+      setLastWarning(warning);
+      throw new Error(warning || '标题包含过多违规词汇，请修改后重新发布');
+    }
+
+    // 文明用词过滤 - 内容
+    const contentFilter = containsProfanity(post.content);
+    if (!contentFilter.clean) {
+      const warning = getProfanityWarning(post.content);
+      setLastWarning(warning);
+      throw new Error(warning || '内容包含过多违规词汇，请修改后重新发布');
+    }
+
+    // 使用过滤后的文本
+    const finalTitle = titleFilter.filteredText;
+    const finalContent = contentFilter.filteredText;
+
+    // 过滤昵称
+    const authorFilter = containsProfanity(post.author);
+    const finalAuthor = authorFilter.filteredText;
+
+    // 记录过滤警告（如有）
+    const titleWarning = getProfanityWarning(post.title);
+    const contentWarning = getProfanityWarning(post.content);
+    if (titleWarning || contentWarning) {
+      setLastWarning(contentWarning || titleWarning || null);
+    } else {
+      setLastWarning(null);
+    }
+
     if (!isSupabaseConfigured) {
       const newPost: ForumPost = {
         id: Date.now(),
-        author: post.author,
-        title: post.title,
-        content: post.content,
+        author: finalAuthor || '匿名',
+        title: finalTitle,
+        content: finalContent,
         category: post.category,
         createdAt: new Date().toISOString(),
       };
@@ -79,9 +116,9 @@ export function ForumProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase
       .from('forum_posts')
       .insert({
-        author: post.author,
-        title: post.title,
-        content: post.content,
+        author: finalAuthor || '匿名',
+        title: finalTitle,
+        content: finalContent,
         category: post.category,
       })
       .select()
@@ -125,7 +162,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
 
   return (
     <ForumContext.Provider
-      value={{ posts, loading, addPost, deletePost, postsByCategory, refresh }}
+      value={{ posts, loading, addPost, deletePost, postsByCategory, refresh, lastWarning }}
     >
       {children}
     </ForumContext.Provider>

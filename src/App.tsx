@@ -6,6 +6,7 @@ import { ProductProvider } from './context/ProductContext';
 import { MessageProvider } from './context/MessageContext';
 import { ReviewProvider } from './context/ReviewContext';
 import { ForumProvider } from './context/ForumContext';
+import { CommentProvider } from './context/CommentContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
@@ -84,13 +85,15 @@ export default function App() {
         <ReviewProvider>
           <MessageProvider>
             <ForumProvider>
-              <CartProvider>
-                <Routes>
-                  <Route path="/" element={<FrontPage />} />
-                  <Route path="/forum" element={<ForumPage />} />
-                  <Route path="/admin" element={<AdminPanel />} />
-                </Routes>
-              </CartProvider>
+              <CommentProvider>
+                <CartProvider>
+                  <Routes>
+                    <Route path="/" element={<FrontPage />} />
+                    <Route path="/forum" element={<ForumPage />} />
+                    <Route path="/admin" element={<AdminPanel />} />
+                  </Routes>
+                </CartProvider>
+              </CommentProvider>
             </ForumProvider>
           </MessageProvider>
         </ReviewProvider>

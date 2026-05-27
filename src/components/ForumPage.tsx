@@ -22,10 +22,13 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ForumIcon from '@mui/icons-material/Forum';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
+import CommentIcon from '@mui/icons-material/Comment';
 import { useForum } from '../context/ForumContext';
-import { FORUM_CATEGORIES, type ForumCategory } from '../types';
+import { useComments } from '../context/CommentContext';
+import { FORUM_CATEGORIES, type ForumCategory, type ForumPost } from '../types';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import PostDetailDialog from './PostDetailDialog';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -36,9 +39,12 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ForumPage() {
-  const { posts, loading, addPost, deletePost, postsByCategory } = useForum();
+  const { posts, loading, addPost, deletePost, postsByCategory, lastWarning: forumWarning } = useForum();
+  const { commentsByPostId } = useComments();
   const [activeCategory, setActiveCategory] = useState<ForumCategory | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailPost, setDetailPost] = useState<ForumPost | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [newPost, setNewPost] = useState({
     author: '',
     title: '',
@@ -47,7 +53,7 @@ export default function ForumPage() {
   });
   const [titleError, setTitleError] = useState(false);
   const [contentError, setContentError] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
     open: false,
     message: '',
     severity: 'success',
@@ -68,6 +74,16 @@ export default function ForumPage() {
     return d.toLocaleDateString('zh-CN');
   };
 
+  const handleOpenDetail = (post: ForumPost) => {
+    setDetailPost(post);
+    setDetailOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailOpen(false);
+    setTimeout(() => setDetailPost(null), 300);
+  };
+
   const handleSubmit = async () => {
     let valid = true;
     if (!newPost.title.trim()) { setTitleError(true); valid = false; }
@@ -85,7 +101,12 @@ export default function ForumPage() {
       setNewPost({ author: '', title: '', content: '', category: 'paranormal' });
       setTitleError(false);
       setContentError(false);
-      setSnackbar({ open: true, message: '发帖成功！', severity: 'success' });
+      // 发帖成功时检查是否有过滤警告
+      if (forumWarning) {
+        setSnackbar({ open: true, message: `发帖成功（${forumWarning}）`, severity: 'warning' });
+      } else {
+        setSnackbar({ open: true, message: '发帖成功！', severity: 'success' });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (typeof err === 'string' ? err : JSON.stringify(err));
       console.error('发帖失败:', err);
@@ -93,7 +114,8 @@ export default function ForumPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     try {
       await deletePost(id);
     } catch (err) {
@@ -187,14 +209,17 @@ export default function ForumPage() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {displayPosts.map((post) => {
               const catInfo = getCategoryInfo(post.category);
+              const commentCount = commentsByPostId(post.id).length;
               return (
                 <Card
                   key={post.id}
+                  onClick={() => handleOpenDetail(post)}
                   sx={{
                     backgroundColor: 'rgba(22,33,62,0.4)',
                     border: '1px solid rgba(201,169,110,0.08)',
                     borderRadius: '4px',
                     transition: 'all 0.3s',
+                    cursor: 'pointer',
                     '&:hover': {
                       borderColor: 'rgba(201,169,110,0.2)',
                       backgroundColor: 'rgba(22,33,62,0.6)',
@@ -233,7 +258,7 @@ export default function ForumPage() {
                       <Tooltip title="删除">
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(post.id)}
+                          onClick={(e) => handleDelete(e, post.id)}
                           sx={{ color: 'rgba(192,57,43,0.3)', '&:hover': { color: '#c0392b' } }}
                         >
                           <DeleteOutlineIcon sx={{ fontSize: '1rem' }} />
@@ -241,7 +266,7 @@ export default function ForumPage() {
                       </Tooltip>
                     </Box>
 
-                    {/* 内容 */}
+                    {/* 内容（截断展示） */}
                     <Typography
                       sx={{
                         fontFamily: 'var(--font-serif)',
@@ -270,6 +295,12 @@ export default function ForumPage() {
                         <AccessTimeIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.3)' }} />
                         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.35)', fontSize: '0.8rem' }}>
                           {formatTime(post.createdAt)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <CommentIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.3)' }} />
+                        <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.35)', fontSize: '0.8rem' }}>
+                          {commentCount}
                         </Typography>
                       </Box>
                     </Box>
@@ -427,6 +458,13 @@ export default function ForumPage() {
           </Box>
         </DialogContent>
       </Dialog>
+
+      {/* 帖子详情弹窗 */}
+      <PostDetailDialog
+        open={detailOpen}
+        onClose={handleCloseDetail}
+        post={detailPost}
+      />
 
       {/* 提示消息 */}
       <Snackbar
