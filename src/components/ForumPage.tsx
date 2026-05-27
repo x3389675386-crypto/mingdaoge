@@ -86,9 +86,10 @@ export default function ForumPage() {
       setTitleError(false);
       setContentError(false);
       setSnackbar({ open: true, message: '发帖成功！', severity: 'success' });
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (typeof err === 'string' ? err : JSON.stringify(err));
       console.error('发帖失败:', err);
-      setSnackbar({ open: true, message: '发帖失败，请重试', severity: 'error' });
+      setSnackbar({ open: true, message: msg || '发帖失败，请重试', severity: 'error' });
     }
   };
 

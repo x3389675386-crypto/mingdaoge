@@ -87,7 +87,17 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[明道阁] 发帖失败详情:', JSON.stringify(error, null, 2));
+      // 如果表不存在，给出明确提示
+      if (error.code === '42P01') {
+        throw new Error('论坛数据表尚未创建，请在 Supabase SQL Editor 中执行建表语句');
+      }
+      if (error.message?.includes('policy') || error.code === '42501') {
+        throw new Error('权限不足，请检查 Supabase RLS 策略是否已配置');
+      }
+      throw new Error(error.message || '发帖失败，请稍后重试');
+    }
 
     const newPost = mapDbToPost(data as Record<string, unknown>);
     setPosts((prev) => [newPost, ...prev]);
