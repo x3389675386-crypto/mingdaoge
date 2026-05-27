@@ -59,7 +59,8 @@ export default function ProductTable() {
       }
     } catch (err) {
       console.error('保存失败:', err);
-      alert('保存失败，请重试');
+      const msg = err instanceof Error ? err.message : '未知错误';
+      alert('保存失败：' + msg);
     }
   };
 
