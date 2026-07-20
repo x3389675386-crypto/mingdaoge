@@ -117,4 +117,7 @@ export const categoryLabels: Record<string, string> = {
   handcard: '手牌',
   perfume: '香水',
   talisman: '符卡',
+  bone: '骨质',
+  craft: '工艺品',
+  ivory: '牙质',
 };

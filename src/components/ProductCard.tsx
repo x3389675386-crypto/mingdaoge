@@ -1,11 +1,13 @@
 import { Card, CardContent, CardActions, Button, Chip, Box, Typography } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import type { Product } from '../types';
 
 interface ProductCardProps {
   product: Product;
   onDetail: (product: Product) => void;
   onAddToCart: (product: Product) => void;
+  onBuy: (product: Product) => void;
 }
 
 /** 分类标签颜色映射 */
@@ -15,7 +17,7 @@ const categoryChipColor: Record<string, string> = {
   agarwood: '#5D4037',
 };
 
-export default function ProductCard({ product, onDetail, onAddToCart }: ProductCardProps) {
+export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: ProductCardProps) {
   return (
     <Card
       className="animate-fade-in-up group"
@@ -134,9 +136,8 @@ export default function ProductCard({ product, onDetail, onAddToCart }: ProductC
         </Typography>
       </CardContent>
 
-      <CardActions sx={{ padding: '8px 16px 16px' }}>
+      <CardActions sx={{ padding: '8px 16px 16px', gap: 1 }}>
         <Button
-          fullWidth
           size="small"
           startIcon={<AddShoppingCartIcon />}
           onClick={() => onAddToCart(product)}
@@ -154,6 +155,26 @@ export default function ProductCard({ product, onDetail, onAddToCart }: ProductC
           variant="outlined"
         >
           加入购物车
+        </Button>
+        <Button
+          size="small"
+          startIcon={<ShoppingBagIcon />}
+          onClick={() => onBuy(product)}
+          sx={{
+            backgroundColor: 'rgba(201,169,110,0.9)',
+            color: '#1a1a2e',
+            fontFamily: 'var(--font-serif)',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            borderRadius: '2px',
+            flex: 1,
+            '&:hover': {
+              backgroundColor: '#c9a96e',
+            },
+          }}
+          variant="contained"
+        >
+          购买
         </Button>
       </CardActions>
     </Card>

@@ -1,8 +1,27 @@
 /** 产品分类类型 */
-export type Category = 'all' | 'wood' | 'bodhi' | 'agarwood' | 'handcard' | 'perfume' | 'talisman';
+export type Category =
+  | 'all'
+  | 'wood'
+  | 'bodhi'
+  | 'agarwood'
+  | 'handcard'
+  | 'perfume'
+  | 'talisman'
+  | 'bone'
+  | 'craft'
+  | 'ivory';
 
 /** 产品分类（不含 all） */
-export type ProductCategory = 'wood' | 'bodhi' | 'agarwood' | 'handcard' | 'perfume' | 'talisman';
+export type ProductCategory =
+  | 'wood'
+  | 'bodhi'
+  | 'agarwood'
+  | 'handcard'
+  | 'perfume'
+  | 'talisman'
+  | 'bone'
+  | 'craft'
+  | 'ivory';
 
 /** 产品接口 */
 export interface Product {

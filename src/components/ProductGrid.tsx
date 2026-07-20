@@ -12,6 +12,7 @@ import { categoryLabels } from '../data/products';
 import { useProducts } from '../context/ProductContext';
 import { GoldDivider } from './ChinesePattern';
 import ProductCard from './ProductCard';
+import BuyGuideDialog from './BuyGuideDialog';
 import type { Product, Category } from '../types';
 
 /** 排序方式 */
@@ -26,6 +27,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
   const [category, setCategory] = useState<Category>('all');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('default');
+  const [buyOpen, setBuyOpen] = useState(false);
   const { activeProducts } = useProducts();
 
   /** 计算顺序：分类过滤 → 搜索过滤 → 排序 */
@@ -180,6 +182,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
               product={product}
               onDetail={onDetail}
               onAddToCart={onAddToCart}
+              onBuy={() => setBuyOpen(true)}
             />
           </div>
         ))}
@@ -191,6 +194,9 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
           {search.trim() ? '没有找到相关商品' : '此分类暂无产品'}
         </div>
       )}
+
+      {/* 购买引导弹窗 */}
+      <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
     </section>
   );
 }

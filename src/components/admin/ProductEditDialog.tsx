@@ -34,6 +34,9 @@ const categoryOptions: { value: ProductCategory; label: string }[] = [
   { value: 'handcard', label: '手牌' },
   { value: 'perfume', label: '香水' },
   { value: 'talisman', label: '符卡' },
+  { value: 'bone', label: '骨质' },
+  { value: 'craft', label: '工艺品' },
+  { value: 'ivory', label: '牙质' },
 ];
 
 /** 渐变色预设 */

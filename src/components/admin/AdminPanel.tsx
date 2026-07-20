@@ -6,6 +6,7 @@ import AdminRoute from './AdminRoute';
 import ProductTable from './ProductTable';
 import MessagePanel from './MessagePanel';
 import ReviewPanel from './ReviewPanel';
+import BuyGuideAdmin from './BuyGuideAdmin';
 import { GreekKeyBorder } from '../ChinesePattern';
 import { useMessages } from '../../context/MessageContext';
 
@@ -121,6 +122,7 @@ export default function AdminPanel() {
             }
           />
           <Tab label="晒图管理" />
+          <Tab label="购买引导图" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
@@ -131,6 +133,9 @@ export default function AdminPanel() {
         </TabPanel>
         <TabPanel value={tabValue} index={2}>
           <ReviewPanel />
+        </TabPanel>
+        <TabPanel value={tabValue} index={3}>
+          <BuyGuideAdmin />
         </TabPanel>
 
         {/* 底部提示 */}
