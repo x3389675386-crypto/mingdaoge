@@ -11,6 +11,8 @@ interface ForumContextValue {
   addPost: (post: Omit<ForumPost, 'id' | 'createdAt'>) => Promise<void>;
   /** 删帖 */
   deletePost: (id: number) => Promise<void>;
+  /** 点赞 */
+  likePost: (id: number) => Promise<void>;
   /** 按分类筛选 */
   postsByCategory: (category: ForumCategory) => ForumPost[];
   /** 刷新数据 */
@@ -31,6 +33,7 @@ function mapDbToPost(row: Record<string, unknown>): ForumPost {
     category: (row.category as string) || 'chat',
     createdAt: row.created_at as string,
     imageUrl: (row.image_url as string) || undefined,
+    likes: (row.likes as number) ?? 0,
   };
 }
 
@@ -163,13 +166,27 @@ export function ForumProvider({ children }: { children: ReactNode }) {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const likePost = async (id: number) => {
+    const target = posts.find((p) => p.id === id);
+    const newVal = (target?.likes ?? 0) + 1;
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, likes: newVal } : p)));
+    if (!isSupabaseConfigured) return;
+    const { error } = await supabase
+      .from('forum_posts')
+      .update({ likes: newVal })
+      .eq('id', id);
+    if (error) {
+      console.error('[明道阁] 点赞失败:', error);
+    }
+  };
+
   const postsByCategory = (category: ForumCategory): ForumPost[] => {
     return posts.filter((p) => p.category === category);
   };
 
   return (
     <ForumContext.Provider
-      value={{ posts, loading, addPost, deletePost, postsByCategory, refresh, lastWarning }}
+      value={{ posts, loading, addPost, deletePost, likePost, postsByCategory, refresh, lastWarning }}
     >
       {children}
     </ForumContext.Provider>

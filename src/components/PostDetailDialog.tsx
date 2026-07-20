@@ -17,9 +17,11 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import type { ForumPost } from '../types';
 import { FORUM_CATEGORIES } from '../types';
 import { useComments } from '../context/CommentContext';
+import { useForum } from '../context/ForumContext';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -40,6 +42,7 @@ interface PostDetailDialogProps {
 
 export default function PostDetailDialog({ open, onClose, post }: PostDetailDialogProps) {
   const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
+  const { likePost, posts: forumPosts } = useForum();
   const [newComment, setNewComment] = useState({ author: '', content: '' });
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState('');
@@ -48,6 +51,8 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
 
   const comments = commentsByPostId(post.id);
   const catInfo = FORUM_CATEGORIES.find((c) => c.value === post.category);
+  // 从 Context 取最新帖子，保证点赞数实时同步
+  const livePost = forumPosts.find((p) => p.id === post.id) ?? post;
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);
@@ -165,6 +170,36 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
             <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'rgba(201,169,110,0.35)' }} />
             <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.4)', fontSize: '0.85rem' }}>
               {formatTime(post.createdAt)}
+            </Typography>
+          </Box>
+          {/* 点赞按钮 */}
+          <Box
+            component="button"
+            onClick={() => likePost(livePost.id)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              background: 'rgba(201,169,110,0.06)',
+              border: '1px solid rgba(201,169,110,0.15)',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              padding: '2px 10px',
+              ml: 'auto',
+              color: 'rgba(201,169,110,0.6)',
+              fontFamily: 'var(--font-serif)',
+              fontSize: '0.82rem',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(201,169,110,0.18)',
+                borderColor: 'rgba(201,169,110,0.4)',
+                color: '#c9a96e',
+              },
+            }}
+          >
+            <ThumbUpAltIcon sx={{ fontSize: '0.9rem' }} />
+            <Typography component="span" sx={{ fontFamily: 'var(--font-serif)' }}>
+              {livePost.likes ?? 0}
             </Typography>
           </Box>
         </Box>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -16,9 +16,12 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ForumIcon from '@mui/icons-material/Forum';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
@@ -41,10 +44,14 @@ const categoryColors: Record<string, string> = {
   chat: '#546e7a',
 };
 
+/** 发帖快捷表情 */
+const QUICK_EMOJIS = ['👍', '😂', '🔥', '👏', '💡', '🍀', '🙏', '✨', '🌿', '📿', '💬', '🌟'];
+
 export default function ForumPage() {
-  const { posts, loading, addPost, deletePost, postsByCategory, lastWarning: forumWarning } = useForum();
+  const { posts, loading, addPost, deletePost, likePost, postsByCategory, lastWarning: forumWarning } = useForum();
   const { commentsByPostId } = useComments();
   const [activeCategory, setActiveCategory] = useState<ForumCategory | 'all'>('all');
+  const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailPost, setDetailPost] = useState<ForumPost | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -65,7 +72,16 @@ export default function ForumPage() {
     severity: 'success',
   });
 
-  const displayPosts = activeCategory === 'all' ? posts : postsByCategory(activeCategory as ForumCategory);
+  const displayPosts = useMemo(() => {
+    const list = activeCategory === 'all' ? posts : postsByCategory(activeCategory as ForumCategory);
+    const sorted = [...list];
+    if (sortMode === 'latest') {
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+      sorted.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
+    }
+    return sorted;
+  }, [posts, activeCategory, postsByCategory, sortMode]);
 
   const getCategoryInfo = (value: string) => FORUM_CATEGORIES.find((c) => c.value === value);
 
@@ -229,6 +245,34 @@ export default function ForumPage() {
           ))}
         </Box>
 
+        {/* 排序切换：最新 / 热门 */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <ToggleButtonGroup
+            value={sortMode}
+            exclusive
+            size="small"
+            onChange={(_, val) => { if (val) setSortMode(val); }}
+            sx={{
+              '& .MuiToggleButton-root': {
+                color: 'rgba(201,169,110,0.5)',
+                borderColor: 'rgba(201,169,110,0.15)',
+                fontFamily: 'var(--font-serif)',
+                fontSize: '0.78rem',
+                padding: '3px 16px',
+                letterSpacing: '0.1em',
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(201,169,110,0.12)',
+                  color: '#c9a96e',
+                  borderColor: 'rgba(201,169,110,0.4)',
+                },
+              },
+            }}
+          >
+            <ToggleButton value="latest">最新</ToggleButton>
+            <ToggleButton value="hot">热门</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
         {/* 帖子列表 */}
         {loading ? (
           <Typography sx={{ textAlign: 'center', color: 'rgba(245,240,235,0.4)', py: 8, fontFamily: 'var(--font-serif)' }}>
@@ -351,6 +395,34 @@ export default function ForumPage() {
                         <CommentIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.3)' }} />
                         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.35)', fontSize: '0.8rem' }}>
                           {commentCount}
+                        </Typography>
+                      </Box>
+                      {/* 点赞按钮 */}
+                      <Box
+                        component="button"
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          likePost(post.id);
+                        }}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 0,
+                          ml: 'auto',
+                          color: 'rgba(201,169,110,0.45)',
+                          fontFamily: 'var(--font-serif)',
+                          fontSize: '0.8rem',
+                          transition: 'color 0.2s',
+                          '&:hover': { color: '#c9a96e' },
+                        }}
+                      >
+                        <ThumbUpAltIcon sx={{ fontSize: '0.85rem' }} />
+                        <Typography component="span" sx={{ fontFamily: 'var(--font-serif)' }}>
+                          {post.likes ?? 0}
                         </Typography>
                       </Box>
                     </Box>
@@ -490,6 +562,38 @@ export default function ForumPage() {
                 '& .MuiInputLabel-root': { fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.5)' },
               }}
             />
+
+            {/* 快捷表情 */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+              {QUICK_EMOJIS.map((emoji) => (
+                <Box
+                  key={emoji}
+                  component="button"
+                  onClick={() => setNewPost((prev) => ({ ...prev, content: prev.content + emoji }))}
+                  sx={{
+                    background: 'rgba(201,169,110,0.06)',
+                    border: '1px solid rgba(201,169,110,0.15)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '1.1rem',
+                    lineHeight: 1,
+                    width: 36,
+                    height: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      backgroundColor: 'rgba(201,169,110,0.18)',
+                      borderColor: 'rgba(201,169,110,0.4)',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  {emoji}
+                </Box>
+              ))}
+            </Box>
 
             {/* 图片上传区域 */}
             <Box>

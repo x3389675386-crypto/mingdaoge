@@ -126,6 +126,8 @@ export interface ForumPost {
   createdAt: string;
   /** 帖子图片URL */
   imageUrl?: string;
+  /** 点赞数 */
+  likes?: number;
 }
 
 /** 论坛分类 */
