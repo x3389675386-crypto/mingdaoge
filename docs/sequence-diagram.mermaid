@@ -1,0 +1,80 @@
+%% 明道阁 P2-3 私聊入口 程序调用流程（5 场景）
+
+%% ① 发帖落 guest_id（含身份闸 Q5/P0-2）
+sequenceDiagram
+    participant U as 用户
+    participant FP as ForumPage
+    participant G as useIdentityGate
+    participant ND as NicknameDialog
+    participant FC as ForumContext
+    participant DB as forum_posts
+    U->>FP: 填表单点「发表」
+    FP->>G: withIdentity(()=>addPost(...))
+    alt 已有昵称(ensureIdentity)
+        G->>FC: addPost({...,guest_id:getGuest().guest_id})
+        FC->>DB: INSERT(author,...,guest_id)
+    else 无昵称
+        G->>ND: open=true
+        U->>ND: 填昵称确认
+        ND->>ND: setNickname()
+        ND->>G: onClose()
+        G->>FC: addPost({...,guest_id:getGuest().guest_id})
+        FC->>DB: INSERT(...,guest_id)
+    end
+
+%% ② 点击「私聊」按钮 → 跳转并自动建会话（P0-3/4）
+sequenceDiagram
+    participant U as 用户
+    participant C as 内容组件(ForumPage/PostDetail/ReviewSection)
+    participant R as useNavigate
+    participant CP as ChatPage
+    participant CX as ChatContext
+    U->>C: 点作者「私聊」(guest_id存在且≠自己)
+    C->>R: navigate('/chat?peer=<gid>&name=<nick>')
+    R->>CP: 挂载, useSearchParams读peer/name
+    alt 已有昵称
+        CP->>CX: openConversation(peer,name)
+        CX->>CX: convId=getConversationId(myId,peer);setActive;getMessages;markRead
+    else 无昵称
+        CP->>CP: 存pendingPeerRef, 保持NicknameDialog阻塞
+    end
+    CP->>CP: setSearchParams({}) 清参
+
+%% ③ 无昵称前置流转（Q2/P2-2）
+sequenceDiagram
+    participant U as 用户
+    participant CP as ChatPage
+    participant ND as NicknameDialog
+    participant CX as ChatContext
+    U->>CP: 带peer进/chat且无昵称
+    CP->>ND: open=true(needsNickname)
+    U->>ND: 填昵称确认
+    ND->>ND: setNickname()
+    ND->>CP: onClose()
+    CP->>CP: 取pendingPeerRef
+    CP->>CX: openConversation(pending.id,pending.name)
+    CP->>CP: 清peer query
+
+%% ④ 旧内容降级（P0-5）
+sequenceDiagram
+    participant C as 内容组件
+    participant U as 用户
+    Note over C: 渲染判 post/comment/review.guest_id
+    alt guest_id为空(NULL)
+        C->>C: 不渲染「私聊」按钮(或禁用+tooltip)
+        U->>C: 无可用入口, 不建会话
+    else guest_id存在
+        C->>U: 显示「私聊」按钮(金色#c9a96e)
+    end
+
+%% ⑤ 未配置 Supabase 降级（P0-6）
+sequenceDiagram
+    participant U as 用户
+    participant C as 内容组件
+    participant CP as ChatPage
+    participant CX as ChatContext(降级)
+    U->>C: 点「私聊」
+    C->>CP: navigate('/chat?peer=...')
+    CP->>CP: 显示「未连接云端」提示条
+    CP->>CX: openConversation(降级为localStorage)
+    Note over CX: 不实时、不崩溃, 本机留存

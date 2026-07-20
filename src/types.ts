@@ -117,6 +117,8 @@ export interface Review {
   productId?: number;
   /** 创建时间 ISO 字符串 */
   createdAt: string;
+  /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
+  guest_id?: string;
 }
 
 /** 晒图状态接口 */
@@ -147,6 +149,8 @@ export interface ForumPost {
   imageUrl?: string;
   /** 点赞数 */
   likes?: number;
+  /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
+  guest_id?: string;
 }
 
 /** 论坛分类 */

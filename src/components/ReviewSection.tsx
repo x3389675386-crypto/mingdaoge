@@ -6,6 +6,7 @@ import { useReviews } from '../context/ReviewContext';
 import { useProducts } from '../context/ProductContext';
 import { GoldDivider } from './ChinesePattern';
 import ReviewForm from './ReviewForm';
+import PrivateChatButton from './PrivateChatButton';
 
 /** 格式化时间为相对时间 */
 function formatRelativeTime(dateStr: string): string {
@@ -99,16 +100,19 @@ export default function ReviewSection() {
                 <CardContent sx={{ p: 3 }}>
                   {/* 昵称和时间 */}
                   <div className="flex items-center justify-between mb-2">
-                    <Typography
-                      sx={{
-                        fontFamily: 'var(--font-serif)',
-                        color: '#c9a96e',
-                        fontWeight: 700,
-                        fontSize: '0.95rem',
-                      }}
-                    >
-                      {review.nickname}
-                    </Typography>
+                    <div className="flex items-center gap-2">
+                      <Typography
+                        sx={{
+                          fontFamily: 'var(--font-serif)',
+                          color: '#c9a96e',
+                          fontWeight: 700,
+                          fontSize: '0.95rem',
+                        }}
+                      >
+                        {review.nickname}
+                      </Typography>
+                      <PrivateChatButton guestId={review.guest_id} nickname={review.nickname} />
+                    </div>
                     <Typography
                       sx={{
                         fontFamily: 'var(--font-serif)',

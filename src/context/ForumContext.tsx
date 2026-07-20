@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import type { ForumPost, ForumCategory } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
+import { ensureGuestId } from '../lib/guestIdentity';
 
 /** Context 值接口 */
 interface ForumContextValue {
@@ -34,6 +35,7 @@ function mapDbToPost(row: Record<string, unknown>): ForumPost {
     createdAt: row.created_at as string,
     imageUrl: (row.image_url as string) || undefined,
     likes: (row.likes as number) ?? 0,
+    guest_id: (row.guest_id as string) || undefined,
   };
 }
 
@@ -104,6 +106,8 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       setLastWarning(null);
     }
 
+    const guestId = ensureGuestId();
+
     if (!isSupabaseConfigured) {
       const newPost: ForumPost = {
         id: Date.now(),
@@ -113,6 +117,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         category: post.category,
         createdAt: new Date().toISOString(),
         imageUrl: post.imageUrl,
+        guest_id: guestId,
       };
       setPosts((prev) => [newPost, ...prev]);
       return;
@@ -123,6 +128,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       title: finalTitle,
       content: finalContent,
       category: post.category,
+      guest_id: guestId,
     };
     if (post.imageUrl) {
       insertData.image_url = post.imageUrl;

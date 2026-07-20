@@ -1,0 +1,50 @@
+%% 明道阁 P2-3 私聊入口 数据结构与接口类图
+
+classDiagram
+    class ForumPost {
+      +number id
+      +string author
+      +string title
+      +string content
+      +string category
+      +string createdAt
+      +string imageUrl
+      +number likes
+      +string guest_id
+    }
+    class ForumComment {
+      +number id
+      +number postId
+      +string author
+      +string content
+      +string createdAt
+      +string guest_id
+    }
+    class Review {
+      +number id
+      +string nickname
+      +string content
+      +string imageUrl
+      +number productId
+      +string createdAt
+      +string guest_id
+    }
+    class ChatContextValue {
+      +GuestIdentity guest
+      +boolean ensureIdentity()
+      +void openConversation(peerId, peerName)
+      +void setNickname(name)
+      +ChatConversation[] conversations
+      +number unreadTotal
+    }
+    class useIdentityGate {
+      +void withIdentity(action)
+      +ReactNode dialog
+    }
+    class ChatPage {
+      -pendingPeerRef
+      +handleNicknameClose()
+    }
+    ChatPage ..> ChatContextValue : useChat()
+    useIdentityGate ..> ChatContextValue : useChat()
+    ChatPage ..> useIdentityGate : 发布场景可选复用

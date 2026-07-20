@@ -17,6 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useReviews } from '../context/ReviewContext';
 import { useProducts } from '../context/ProductContext';
+import { useIdentityGate } from '../hooks/useIdentityGate';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /** 图片大小限制 10MB */
@@ -30,6 +31,7 @@ interface ReviewFormProps {
 export default function ReviewForm({ open, onClose }: ReviewFormProps) {
   const { addReview } = useReviews();
   const { activeProducts } = useProducts();
+  const identityGate = useIdentityGate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nickname, setNickname] = useState('');
@@ -123,16 +125,19 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
     }
     if (!valid) return;
 
-    addReview({
-      nickname: nickname.trim(),
-      content: content.trim(),
-      imageUrl,
-      productId,
-    });
+    // 发布前确保已设置聊天昵称（P2-3 Q5 / P0-2 行为变更：晒图必须落 guest_id）
+    identityGate.withIdentity(() => {
+      addReview({
+        nickname: nickname.trim(),
+        content: content.trim(),
+        imageUrl,
+        productId,
+      });
 
-    resetForm();
-    setSnackbarOpen(true);
-    onClose();
+      resetForm();
+      setSnackbarOpen(true);
+      onClose();
+    });
   };
 
   /** 处理关闭 */
@@ -352,6 +357,8 @@ export default function ReviewForm({ open, onClose }: ReviewFormProps) {
           分享成功，感谢您！
         </Alert>
       </Snackbar>
+
+      {identityGate.dialog}
     </>
   );
 }

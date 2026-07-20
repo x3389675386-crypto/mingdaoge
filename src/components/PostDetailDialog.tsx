@@ -22,6 +22,8 @@ import type { ForumPost } from '../types';
 import { FORUM_CATEGORIES } from '../types';
 import { useComments } from '../context/CommentContext';
 import { useForum } from '../context/ForumContext';
+import { useIdentityGate } from '../hooks/useIdentityGate';
+import PrivateChatButton from './PrivateChatButton';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -42,6 +44,7 @@ interface PostDetailDialogProps {
 
 export default function PostDetailDialog({ open, onClose, post }: PostDetailDialogProps) {
   const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
+  const identityGate = useIdentityGate();
   const { likePost, posts: forumPosts } = useForum();
   const [newComment, setNewComment] = useState({ author: '', content: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -65,12 +68,14 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
     return d.toLocaleDateString('zh-CN');
   };
 
-  const handleSubmitComment = async () => {
+  const handleSubmitComment = () => {
     if (!newComment.content.trim()) {
       setCommentError('评论内容不能为空');
       return;
     }
 
+    // 发布前确保已设置聊天昵称（P2-3 Q5 / P0-2 行为变更：评论必须落 guest_id）
+    identityGate.withIdentity(async () => {
     try {
       setSubmitting(true);
       setCommentError('');
@@ -86,6 +91,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
     } finally {
       setSubmitting(false);
     }
+    });
   };
 
   const handleClose = () => {
@@ -95,6 +101,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={handleClose}
@@ -172,6 +179,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
               {formatTime(post.createdAt)}
             </Typography>
           </Box>
+          <PrivateChatButton guestId={post.guest_id} nickname={post.author} />
           {/* 点赞按钮 */}
           <Box
             component="button"
@@ -299,6 +307,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
                     >
                       {formatTime(comment.createdAt)}
                     </Typography>
+                    <PrivateChatButton guestId={comment.guest_id} nickname={comment.author} />
                   </Box>
                   <IconButton
                     size="small"
@@ -435,5 +444,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
         </Box>
       </DialogContent>
     </Dialog>
+      {identityGate.dialog}
+    </>
   );
 }

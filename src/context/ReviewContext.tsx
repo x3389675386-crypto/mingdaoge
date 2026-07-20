@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Review } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { ensureGuestId } from '../lib/guestIdentity';
 
 /** Context 值接口 */
 interface ReviewContextValue {
@@ -27,6 +28,7 @@ function mapDbToReview(row: Record<string, unknown>): Review {
     imageUrl: (row.image_url as string) || undefined,
     productId: (row.product_id as number) || undefined,
     createdAt: row.created_at as string,
+    guest_id: (row.guest_id as string) || undefined,
   };
 }
 
@@ -63,6 +65,8 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
+    const guestId = ensureGuestId();
+
     if (!isSupabaseConfigured) {
       const newReview: Review = {
         id: Date.now(),
@@ -71,6 +75,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
         imageUrl: review.imageUrl,
         productId: review.productId,
         createdAt: new Date().toISOString(),
+        guest_id: guestId,
       };
       setReviews((prev) => [newReview, ...prev]);
       return;
@@ -83,6 +88,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
         content: review.content,
         image_url: review.imageUrl || null,
         product_id: review.productId || null,
+        guest_id: guestId,
       })
       .select()
       .single();

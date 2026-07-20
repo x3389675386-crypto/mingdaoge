@@ -32,9 +32,11 @@ import { useForum } from '../context/ForumContext';
 import { useComments } from '../context/CommentContext';
 import { FORUM_CATEGORIES, type ForumCategory, type ForumPost } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useIdentityGate } from '../hooks/useIdentityGate';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
+import PrivateChatButton from './PrivateChatButton';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -50,6 +52,7 @@ const QUICK_EMOJIS = ['👍', '😂', '🔥', '👏', '💡', '🍀', '🙏', '�
 export default function ForumPage() {
   const { posts, loading, addPost, deletePost, likePost, postsByCategory, lastWarning: forumWarning } = useForum();
   const { commentsByPostId } = useComments();
+  const identityGate = useIdentityGate();
   const [activeCategory, setActiveCategory] = useState<ForumCategory | 'all'>('all');
   const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -106,12 +109,14 @@ export default function ForumPage() {
     setTimeout(() => setDetailPost(null), 300);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     let valid = true;
     if (!newPost.title.trim()) { setTitleError(true); valid = false; }
     if (!newPost.content.trim()) { setContentError(true); valid = false; }
     if (!valid) return;
 
+    // 发布前确保已设置聊天昵称（P2-3 Q5 / P0-2 行为变更：发布必须落 guest_id）
+    identityGate.withIdentity(async () => {
     try {
       let imageUrl: string | undefined;
 
@@ -164,6 +169,7 @@ export default function ForumPage() {
       console.error('发帖失败:', err);
       setSnackbar({ open: true, message: msg || '发帖失败，请重试', severity: 'error' });
     }
+    });
   };
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -397,6 +403,7 @@ export default function ForumPage() {
                           {commentCount}
                         </Typography>
                       </Box>
+                      <PrivateChatButton guestId={post.guest_id} nickname={post.author} />
                       {/* 点赞按钮 */}
                       <Box
                         component="button"
@@ -713,6 +720,8 @@ export default function ForumPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {identityGate.dialog}
 
       <Footer />
     </>

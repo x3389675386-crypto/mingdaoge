@@ -1,4 +1,6 @@
 import { Box, Typography } from '@mui/material';
+import { useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import ChatView from './ChatView';
@@ -9,10 +11,37 @@ import ChatIcon from '@mui/icons-material/Chat';
 
 /** 私聊页（前台 /chat 路由） */
 export default function ChatPage() {
-  const { guest } = useChat();
+  const { guest, ensureIdentity, openConversation } = useChat();
+  const [searchParams, setSearchParams] = useSearchParams();
+  /** 待建立会话的对方（无昵称进入时缓存，设完昵称后自动开启） */
+  const pendingPeerRef = useRef<{ id: string; name: string } | null>(null);
 
   // 首访（guest 为 null）或昵称为空 → 必须设置昵称
   const needsNickname = !guest || !guest.nickname || !guest.nickname.trim();
+
+  // 读取 URL 中的 peer/name（方案 B，Q1）：点击「私聊」跳转携带
+  useEffect(() => {
+    const peer = searchParams.get('peer');
+    const name = searchParams.get('name') || '';
+    if (!peer) {
+      pendingPeerRef.current = null;
+      return;
+    }
+    if (ensureIdentity()) {
+      // 已有昵称：立即建会话并清参，避免重复触发
+      pendingPeerRef.current = null;
+      openConversation(peer, name);
+      setSearchParams({}, { replace: true });
+    } else {
+      // 无昵称：缓存 pending peer，保持 NicknameDialog 阻塞；
+      // 昵称设置后 guest 更新 → ensureIdentity 翻转 → 本 effect 再次执行并自动开会话（Q2/P2-2）
+      pendingPeerRef.current = { id: peer, name };
+    }
+  }, [searchParams, ensureIdentity, openConversation, setSearchParams]);
+
+  // 昵称弹窗关闭：保留原首访 no-op 语义；
+  // pending 会话由上面 effect 在昵称设置（guest 更新）后自动开启，避免与 effect 重复开会话
+  const handleNicknameClose = useCallback(() => {}, []);
 
   return (
     <>
@@ -72,7 +101,7 @@ export default function ChatPage() {
 
       {/* 昵称弹窗：needsNickname 直接驱动 open，避免 null-guest 不弹窗；
           onClose 设为 no-op，防止点击背景关闭后陷入无昵称死锁（确认后由 setNickname 自动隐藏） */}
-      <NicknameDialog open={needsNickname} onClose={() => {}} />
+      <NicknameDialog open={needsNickname} onClose={handleNicknameClose} />
     </>
   );
 }

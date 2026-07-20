@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
+import { ensureGuestId } from '../lib/guestIdentity';
 
 /** 评论接口 */
 export interface ForumComment {
@@ -21,6 +22,8 @@ export interface ForumComment {
   content: string;
   /** 创建时间 ISO 字符串 */
   createdAt: string;
+  /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
+  guest_id?: string;
 }
 
 /** Context 值接口 */
@@ -51,6 +54,7 @@ function mapDbToComment(row: Record<string, unknown>): ForumComment {
     author: (row.author as string) || '匿名',
     content: (row.content as string) || '',
     createdAt: row.created_at as string,
+    guest_id: (row.guest_id as string) || undefined,
   };
 }
 
@@ -121,6 +125,8 @@ export function CommentProvider({ children }: { children: ReactNode }) {
       setLastWarning(null);
     }
 
+    const guestId = ensureGuestId();
+
     if (!isSupabaseConfigured) {
       const newComment: ForumComment = {
         id: Date.now(),
@@ -128,6 +134,7 @@ export function CommentProvider({ children }: { children: ReactNode }) {
         author: finalAuthor || '匿名',
         content: finalContent,
         createdAt: new Date().toISOString(),
+        guest_id: guestId,
       };
       setComments((prev) => [...prev, newComment]);
       return;
@@ -139,6 +146,7 @@ export function CommentProvider({ children }: { children: ReactNode }) {
         post_id: comment.postId,
         author: finalAuthor || '匿名',
         content: finalContent,
+        guest_id: guestId,
       })
       .select()
       .single();
