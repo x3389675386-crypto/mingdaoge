@@ -158,3 +158,45 @@ export const FORUM_CATEGORIES = [
 ] as const;
 
 export type ForumCategory = typeof FORUM_CATEGORIES[number]['value'];
+
+/** 私聊消息接口（对应 chat_messages 表） */
+export interface ChatMessage {
+  /** 消息唯一ID */
+  id: number;
+  /** 会话ID（两 guest_id 排序拼接，确定性派生） */
+  conversationId: string;
+  /** 发送方 guest_id */
+  senderId: string;
+  /** 发送方昵称（冗余存储，改昵称不影响历史） */
+  senderName: string;
+  /** 接收方 guest_id */
+  receiverId: string;
+  /** 接收方昵称（冗余存储） */
+  receiverName: string;
+  /** 文本内容 */
+  content: string;
+  /** 消息类型 */
+  type: 'text' | 'image';
+  /** 图片消息 URL（base64 或 Storage） */
+  imageUrl?: string;
+  /** 是否已读 */
+  isRead: boolean;
+  /** 创建时间 ISO 字符串 */
+  createdAt: string;
+}
+
+/** 私聊会话接口（由消息派生的视图） */
+export interface ChatConversation {
+  /** 会话ID */
+  conversationId: string;
+  /** 对方 guest_id */
+  peerId: string;
+  /** 对方昵称 */
+  peerName: string;
+  /** 最后一条消息预览 */
+  lastMessage: string;
+  /** 最后消息时间 */
+  lastAt: string;
+  /** 未读消息数 */
+  unreadCount: number;
+}

@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip, Box } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ChatIcon from '@mui/icons-material/Chat';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useChat } from '../context/ChatContext';
 import { CloudPattern } from './ChinesePattern';
+import { ADMIN_GUEST_ID, ADMIN_NAME } from '../lib/chatConstants';
 
 /** 导航链接列表 */
 const navLinks = [
   { label: '首页', href: '#hero', sectionId: 'hero' },
   { label: '产品', href: '#products', sectionId: 'products' },
   { label: '论坛', href: '/forum', isRoute: true },
+  { label: '私聊', href: '/chat', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },
   { label: '联系', href: '#footer', sectionId: 'footer' },
 ];
@@ -20,6 +25,7 @@ const navLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, dispatch } = useCart();
+  const { unreadTotal, openConversation } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -92,6 +98,14 @@ export default function Navbar() {
                   className="text-jade-white/70 hover:text-gold transition-colors duration-300 text-sm tracking-wider no-underline relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-px after:bg-gold after:transition-all after:duration-300 hover:after:w-full"
                 >
                   {link.label}
+                  {link.label === '私聊' && unreadTotal > 0 && (
+                    <span
+                      className="ml-1 inline-flex items-center justify-center text-[0.6rem] leading-none text-jade-white bg-[#c0392b] rounded-full"
+                      style={{ minWidth: 16, height: 16, padding: '0 4px' }}
+                    >
+                      {unreadTotal}
+                    </span>
+                  )}
                 </a>
               ))}
             </nav>
@@ -99,6 +113,43 @@ export default function Navbar() {
 
           {/* 右侧操作区 */}
           <div className="flex items-center gap-1 ml-auto">
+            {/* 联系客服快捷按钮 */}
+            <Tooltip title={`联系客服（${ADMIN_NAME}）`}>
+              <IconButton
+                onClick={() => { openConversation(ADMIN_GUEST_ID, ADMIN_NAME); navigate('/chat'); }}
+                sx={{ color: 'rgba(201,169,110,0.6)', '&:hover': { color: '#c9a96e' } }}
+                aria-label="联系客服"
+                size="small"
+              >
+                <SupportAgentIcon sx={{ fontSize: '1.1rem' }} />
+              </IconButton>
+            </Tooltip>
+
+            {/* 私聊入口（带未读角标） */}
+            <Tooltip title="私聊">
+              <IconButton
+                onClick={() => navigate('/chat')}
+                sx={{ color: 'rgba(201,169,110,0.8)' }}
+                aria-label="私聊"
+                size="small"
+              >
+                <Badge
+                  badgeContent={unreadTotal}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      backgroundColor: '#c0392b',
+                      color: '#f5f0eb',
+                      fontSize: '0.7rem',
+                      minWidth: '18px',
+                      height: '18px',
+                    },
+                  }}
+                >
+                  <ChatIcon sx={{ fontSize: '1.2rem' }} />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
             {/* 管理入口（隐蔽小图标） */}
             <Tooltip title="管理">
               <IconButton
@@ -182,7 +233,31 @@ export default function Navbar() {
               }}
             >
               <ListItemText
-                primary={link.label}
+                primary={
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                    {link.label}
+                    {link.label === '私聊' && unreadTotal > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          backgroundColor: '#c0392b',
+                          color: '#f5f0eb',
+                          fontSize: '0.65rem',
+                          minWidth: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          px: 0.5,
+                        }}
+                      >
+                        {unreadTotal}
+                      </Box>
+                    )}
+                  </span>
+                }
                 sx={{
                   '& .MuiListItemText-primary': {
                     color: '#f5f0eb',

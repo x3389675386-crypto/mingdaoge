@@ -7,6 +7,7 @@ import { MessageProvider } from './context/MessageContext';
 import { ReviewProvider } from './context/ReviewContext';
 import { ForumProvider } from './context/ForumContext';
 import { CommentProvider } from './context/CommentContext';
+import { ChatProvider } from './context/ChatContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
@@ -17,6 +18,7 @@ import ReviewSection from './components/ReviewSection';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
+import ChatPage from './components/ChatPage';
 import type { Product } from './types';
 
 /** MUI 深色主题定制 */
@@ -87,11 +89,14 @@ export default function App() {
             <ForumProvider>
               <CommentProvider>
                 <CartProvider>
-                  <Routes>
-                    <Route path="/" element={<FrontPage />} />
-                    <Route path="/forum" element={<ForumPage />} />
-                    <Route path="/admin" element={<AdminPanel />} />
-                  </Routes>
+                  <ChatProvider>
+                    <Routes>
+                      <Route path="/" element={<FrontPage />} />
+                      <Route path="/forum" element={<ForumPage />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/admin" element={<AdminPanel />} />
+                    </Routes>
+                  </ChatProvider>
                 </CartProvider>
               </CommentProvider>
             </ForumProvider>
