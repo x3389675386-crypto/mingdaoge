@@ -294,8 +294,9 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
   /** 订阅 Realtime（仅 Supabase 配置时） */
   const subscribeRealtime = useCallback((): (() => void) => {
     if (!isSupabaseConfigured || !myId) return () => {};
+    // 通道名按身份区分，避免后台 admin 与前台共用同一通道导致 removeChannel 互相断开
     const channel = supabase
-      .channel(CHAT_REALTIME_CHANNEL)
+      .channel(`${CHAT_REALTIME_CHANNEL}_${myId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },

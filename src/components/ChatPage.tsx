@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -11,15 +10,8 @@ import ChatIcon from '@mui/icons-material/Chat';
 /** 私聊页（前台 /chat 路由） */
 export default function ChatPage() {
   const { guest } = useChat();
-  const [nicknameOpen, setNicknameOpen] = useState(false);
 
-  // 首次无昵称 → 弹窗
-  useEffect(() => {
-    if (guest && (!guest.nickname || !guest.nickname.trim())) {
-      setNicknameOpen(true);
-    }
-  }, [guest]);
-
+  // 首访（guest 为 null）或昵称为空 → 必须设置昵称
   const needsNickname = !guest || !guest.nickname || !guest.nickname.trim();
 
   return (
@@ -78,9 +70,9 @@ export default function ChatPage() {
 
       <Footer />
 
-      {needsNickname && (
-        <NicknameDialog open={nicknameOpen} onClose={() => setNicknameOpen(false)} />
-      )}
+      {/* 昵称弹窗：needsNickname 直接驱动 open，避免 null-guest 不弹窗；
+          onClose 设为 no-op，防止点击背景关闭后陷入无昵称死锁（确认后由 setNickname 自动隐藏） */}
+      <NicknameDialog open={needsNickname} onClose={() => {}} />
     </>
   );
 }
