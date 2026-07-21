@@ -1,80 +1,50 @@
-%% 明道阁 P2-3 私聊入口 程序调用流程（5 场景）
+%% 明道阁 Auth · 时序图（注册/登录 + 游客↔登录态切换）
 
-%% ① 发帖落 guest_id（含身份闸 Q5/P0-2）
+%% ===== 1. 注册 / 登录（邮箱密码 + OTP）=====
 sequenceDiagram
-    participant U as 用户
-    participant FP as ForumPage
-    participant G as useIdentityGate
-    participant ND as NicknameDialog
-    participant FC as ForumContext
-    participant DB as forum_posts
-    U->>FP: 填表单点「发表」
-    FP->>G: withIdentity(()=>addPost(...))
-    alt 已有昵称(ensureIdentity)
-        G->>FC: addPost({...,guest_id:getGuest().guest_id})
-        FC->>DB: INSERT(author,...,guest_id)
-    else 无昵称
-        G->>ND: open=true
-        U->>ND: 填昵称确认
-        ND->>ND: setNickname()
-        ND->>G: onClose()
-        G->>FC: addPost({...,guest_id:getGuest().guest_id})
-        FC->>DB: INSERT(...,guest_id)
-    end
+    actor U as 用户
+    participant P as 登录/注册页
+    participant A as AuthContext
+    participant S as Supabase Auth
+    participant DB as auth.users + profiles(触发器)
+    participant LS as localStorage
 
-%% ② 点击「私聊」按钮 → 跳转并自动建会话（P0-3/4）
-sequenceDiagram
-    participant U as 用户
-    participant C as 内容组件(ForumPage/PostDetail/ReviewSection)
-    participant R as useNavigate
-    participant CP as ChatPage
-    participant CX as ChatContext
-    U->>C: 点作者「私聊」(guest_id存在且≠自己)
-    C->>R: navigate('/chat?peer=<gid>&name=<nick>')
-    R->>CP: 挂载, useSearchParams读peer/name
-    alt 已有昵称
-        CP->>CX: openConversation(peer,name)
-        CX->>CX: convId=getConversationId(myId,peer);setActive;getMessages;markRead
-    else 无昵称
-        CP->>CP: 存pendingPeerRef, 保持NicknameDialog阻塞
-    end
-    CP->>CP: setSearchParams({}) 清参
+    U->>P: 填写邮箱/密码/昵称
+    P->>A: signUp(email, password, nickname)
+    A->>S: auth.signUp({email, password, data:{nickname}})
+    S->>DB: INSERT auth.users(raw_user_meta_data.nickname)
+    DB-->>DB: 触发器 handle_new_user → INSERT profiles(id, guest_id随机, nickname)
+    S-->>A: 返回 user/session
+    A->>LS: 读取已有 guest_id（老游客）
+    A->>DB: upsert profiles.guest_id = LS.guest_id（绑定历史）
+    A->>LS: 回写 guest_id 兼容降级
+    A-->>P: 注册成功
 
-%% ③ 无昵称前置流转（Q2/P2-2）
-sequenceDiagram
-    participant U as 用户
-    participant CP as ChatPage
-    participant ND as NicknameDialog
-    participant CX as ChatContext
-    U->>CP: 带peer进/chat且无昵称
-    CP->>ND: open=true(needsNickname)
-    U->>ND: 填昵称确认
-    ND->>ND: setNickname()
-    ND->>CP: onClose()
-    CP->>CP: 取pendingPeerRef
-    CP->>CX: openConversation(pending.id,pending.name)
-    CP->>CP: 清peer query
+    Note over U,A: 邮箱 OTP 登录（P0-3）
+    U->>P: 输入邮箱 →「发送验证码/魔法链接」
+    P->>A: signInOtp(email)
+    A->>S: auth.signInWithOtp({email, emailRedirectTo:/verify-email})
+    S-->>U: 发送邮件（链接或 6 位码）
+    U->>P: 点击链接 或 输入验证码
+    P->>A: verifyOtp(email, token)  「链接由 onAuthStateChange 自动接管」
+    A->>S: auth.verifyOtp(...)
+    S-->>A: session
+    A->>DB: 载入 profile（绑定老 guest_id）
+    A-->>P: 登录成功
 
-%% ④ 旧内容降级（P0-5）
-sequenceDiagram
-    participant C as 内容组件
-    participant U as 用户
-    Note over C: 渲染判 post/comment/review.guest_id
-    alt guest_id为空(NULL)
-        C->>C: 不渲染「私聊」按钮(或禁用+tooltip)
-        U->>C: 无可用入口, 不建会话
-    else guest_id存在
-        C->>U: 显示「私聊」按钮(金色#c9a96e)
-    end
+%% ===== 2. 游客 ↔ 登录态 切换 / 身份解析流程 =====
+flowchart TD
+    START[获取「我的身份」] --> AUTH{已登录?}
+    AUTH -- 否（游客） --> GUEST[getMyGuestId = localStorage.guest_id]
+    AUTH -- 是 --> CHAT{profile.chat_guest_id 非空?}
+    CHAT -- 是（客服） --> AGENT[getMyGuestId = 'admin']
+    CHAT -- 否（普通用户） --> USER[getMyGuestId = profile.guest_id]
 
-%% ⑤ 未配置 Supabase 降级（P0-6）
-sequenceDiagram
-    participant U as 用户
-    participant C as 内容组件
-    participant CP as ChatPage
-    participant CX as ChatContext(降级)
-    U->>C: 点「私聊」
-    C->>CP: navigate('/chat?peer=...')
-    CP->>CP: 显示「未连接云端」提示条
-    CP->>CX: openConversation(降级为localStorage)
-    Note over CX: 不实时、不崩溃, 本机留存
+    GUEST --> G1[游客态：可浏览/发帖/私聊]
+    G1 --> G2[私聊走 RPC get_my_chat_messages(localStorage.guest_id)]
+    AGENT --> A1[客服态：对外显示「明道阁客服」]
+    A1 --> A2[getConversationId('admin', peer) 兼容历史 admin 会话]
+    A2 --> A3[私聊走 RPC get_all_chat_messages（is_admin 守卫）]
+    USER --> U1[登录态：profile.guest_id = 老 guest_id]
+    U1 --> U2[历史 forum/chat 行经 RLS 认主，可见/可编辑]
+    U2 --> U3[私聊走 RPC get_my_chat_messages(profile.guest_id)]

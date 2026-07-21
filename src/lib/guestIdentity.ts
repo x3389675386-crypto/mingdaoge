@@ -75,3 +75,20 @@ export function guestIdSuffix(guestId: string): string {
   const clean = guestId.replace(/[^a-z0-9]/gi, '');
   return clean.slice(-4);
 }
+
+/**
+ * 将指定 guest_id 与昵称写回 localStorage（用于登录态绑定历史 / 退出后降级续接）。
+ * 保留既有 guest_id（若存在），仅缺失时生成新值。供 Auth 模块与本地身份同步使用。
+ *
+ * @param guestId 目标 guest_id（通常来自 profile.guest_id）
+ * @param nickname 昵称
+ */
+export function syncGuestId(guestId: string, nickname = ''): GuestIdentity {
+  const existing = getGuest();
+  const next: GuestIdentity = {
+    guest_id: guestId || existing?.guest_id || generateGuestId(),
+    nickname: nickname || existing?.nickname || '',
+  };
+  localStorage.setItem(GUEST_KEY, JSON.stringify(next));
+  return next;
+}

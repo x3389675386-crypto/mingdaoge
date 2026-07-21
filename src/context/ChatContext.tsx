@@ -1,3 +1,14 @@
+/**
+ * ChatContext —— 私聊核心
+ *
+ * 本次改造要点（兼容 Supabase Auth 双态共存）：
+ * - 全局寻址改走 useAuth().getMyGuestId()（客服→'admin'，登录→profile.guest_id，游客→localStorage）。
+ * - 读取改走 RPC：游客/登录走 get_my_chat_messages(p_guest_id)；admin 走 get_all_chat_messages()。
+ * - 登录态用 Realtime 订阅（RLS 已按身份过滤自身行）；游客态（无 auth.uid）改 setInterval 轮询兜底（每 5s）。
+ * - 发送 sender_id = getMyGuestId()；未读/标记已读逻辑保留（游客无 DB 写权限，用本地 sessionRead 兜底）。
+ * - 昵称：登录态经 AuthContext.updateNickname 三处同步；游客态写 localStorage。
+ */
+
 import {
   createContext,
   useContext,
@@ -10,19 +21,12 @@ import {
 } from 'react';
 import type { ChatMessage, ChatConversation } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import {
-  getGuest,
-  setNickname as saveNickname,
-  type GuestIdentity,
-} from '../lib/guestIdentity';
-import {
-  CHAT_REALTIME_CHANNEL,
-  CHAT_STORAGE_KEY,
-  getConversationId,
-} from '../lib/chatConstants';
+import { getGuest, setNickname as saveNickname, type GuestIdentity } from '../lib/guestIdentity';
+import { CHAT_REALTIME_CHANNEL, CHAT_STORAGE_KEY, getConversationId } from '../lib/chatConstants';
 import { containsProfanity } from '../utils/profanityFilter';
+import { useAuth } from './AuthContext';
 
-/** Context 值接口 */
+/** Context 值接口（与既有 UI 契约保持一致） */
 interface ChatContextValue {
   /** 当前身份（null 表示尚未设置昵称） */
   guest: GuestIdentity | null;
@@ -56,7 +60,7 @@ interface ChatContextValue {
   subscribeRealtime: () => () => void;
   /** 标记会话已读 */
   markRead: (convId: string) => Promise<void>;
-  /** 修改昵称（P1-3） */
+  /** 修改昵称（登录态同步 profile+raw_user_meta_data） */
   setNickname: (name: string) => void;
   /** 读取已记住的对方信息（新会话尚无消息时） */
   getPeer: (convId: string) => { id: string; name: string } | null;
@@ -103,31 +107,62 @@ function saveLocalMessages(msgs: ChatMessage[]) {
   }
 }
 
+/**
+ * 从 Supabase 拉取当前身份的私聊消息。
+ * - 管理员：get_all_chat_messages（is_admin 守卫）
+ * - 普通用户/游客：get_my_chat_messages(p_guest_id)（SECURITY DEFINER，绕过被拒的直读）
+ */
+async function fetchMyMessages(myId: string, isAdminUser: boolean): Promise<ChatMessage[]> {
+  if (isAdminUser) {
+    const { data, error } = await supabase.rpc('get_all_chat_messages');
+    if (error) throw error;
+    return ((data as Record<string, unknown>[]) || []).map(mapRow);
+  }
+  const { data, error } = await supabase.rpc('get_my_chat_messages', { p_guest_id: myId });
+  if (error) throw error;
+  return ((data as Record<string, unknown>[]) || []).map(mapRow);
+}
+
 interface ChatProviderProps {
   children: ReactNode;
-  /** 强制指定身份（后台客服以 admin 身份收发时使用） */
+  /** 强制指定身份（保留兼容；新后台鉴权改由 AuthContext 提供 admin 身份） */
   identityOverride?: GuestIdentity | null;
 }
 
 /** Provider 组件 */
 export function ChatProvider({ children, identityOverride }: ChatProviderProps) {
-  const [guest, setGuest] = useState<GuestIdentity | null>(
-    () => identityOverride ?? getGuest()
-  );
+  const { isAuthenticated, isAdmin, getMyGuestId, profile, updateNickname } = useAuth();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  /** 记忆对方信息：conversationId -> {id, name}，用于尚无消息的新会话展示 */
   const peerNamesRef = useRef<Record<string, { id: string; name: string }>>({});
+  /** 本会话内已手动标记已读的会话（游客无 DB 写权限时的本地兜底） */
+  const sessionReadRef = useRef<Set<string>>(new Set());
 
-  const myId = guest?.guest_id ?? null;
+  // 全局寻址：登录态 = profile.chat_guest_id/guest_id；游客态 = localStorage.guest_id
+  const myId = getMyGuestId();
+
+  // 昵称来源：登录态 profile.nickname；游客态 localStorage.nickname
+  const myName = isAuthenticated && profile ? profile.nickname || '' : getGuest()?.nickname || '';
+
+  // 对外暴露的 guest（兼容 ChatView / PrivateChatButton / NicknameDialog）
+  const [guest, setGuest] = useState<GuestIdentity | null>(() =>
+    identityOverride ?? (myId ? { guest_id: myId, nickname: myName } : null)
+  );
+
+  // 登录态：以 profile 派生 guest（优先于 localStorage）
+  useEffect(() => {
+    if (identityOverride) return;
+    setGuest(myId ? { guest_id: myId, nickname: myName } : null);
+  }, [myId, myName, identityOverride]);
 
   /** 是否还有昵称 */
   const ensureIdentity = useCallback((): boolean => {
     return !!(guest && guest.nickname && guest.nickname.trim());
   }, [guest]);
 
-  /** 拉取当前 guest 参与的全部消息 */
+  /** 拉取当前身份参与的全部消息 */
   const getConversations = useCallback(async () => {
     if (!myId) return;
     setLoading(true);
@@ -137,19 +172,13 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
         setMessages(all.filter((m) => m.senderId === myId || m.receiverId === myId));
         return;
       }
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .or(`sender_id.eq.${myId},receiver_id.eq.${myId}`)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      setMessages((data || []).map(mapRow));
+      setMessages(await fetchMyMessages(myId, isAdmin));
     } catch (err) {
       console.error('[明道阁] 加载私聊消息失败:', err);
     } finally {
       setLoading(false);
     }
-  }, [myId]);
+  }, [myId, isAdmin]);
 
   /** 拉取指定会话消息（断线补拉用） */
   const getMessages = useCallback(
@@ -161,28 +190,24 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
           setMessages(all.filter((m) => m.senderId === myId || m.receiverId === myId));
           return;
         }
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('conversation_id', convId)
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        const rows = (data || []).map(mapRow);
+        const rows = await fetchMyMessages(myId, isAdmin);
+        const filtered = rows.filter((m) => m.conversationId === convId);
         setMessages((prev) => {
           const others = prev.filter((m) => m.conversationId !== convId);
-          return [...others, ...rows];
+          return [...others, ...filtered];
         });
       } catch (err) {
         console.error('[明道阁] 拉取会话消息失败:', err);
       }
     },
-    [myId]
+    [myId, isAdmin]
   );
 
   /** 标记会话已读 */
   const markRead = useCallback(
     async (convId: string) => {
       if (!myId) return;
+      sessionReadRef.current.add(convId);
       setMessages((prev) =>
         prev.map((m) =>
           m.conversationId === convId && m.receiverId === myId && !m.isRead
@@ -205,7 +230,8 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
           .eq('conversation_id', convId)
           .eq('receiver_id', myId);
       } catch (err) {
-        console.error('[明道阁] 标记已读失败:', err);
+        // 游客（anon）无 UPDATE 权限属预期，本地已标记已读
+        console.debug('[明道阁] 标记已读（服务端）受限：', err);
       }
     },
     [myId]
@@ -233,11 +259,10 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
       type: 'text' | 'image' = 'text',
       imageUrl?: string
     ) => {
-      if (!guest || !myId) return;
-      const finalName = guest.nickname || '匿名道友';
-      const rawContent = content;
+      if (!myId) return;
+      const finalName = myName || '匿名道友';
       // 文本消息做文明用词过滤（图片无文本）
-      const filtered = type === 'text' ? containsProfanity(rawContent).filteredText : rawContent;
+      const filtered = type === 'text' ? containsProfanity(content).filteredText : content;
       const convId = getConversationId(myId, peerId);
       peerNamesRef.current[convId] = { id: peerId, name: peerName };
       setActiveConversationId(convId);
@@ -283,15 +308,12 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
       if (error) throw error;
       const newMsg = mapRow(data as Record<string, unknown>);
       // 追加真实行（Realtime 回显会按 id 去重）
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
+      setMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
     },
-    [guest, myId]
+    [myId, myName]
   );
 
-  /** 订阅 Realtime（仅 Supabase 配置时） */
+  /** 订阅 Realtime（仅 Supabase 配置且登录态时） */
   const subscribeRealtime = useCallback((): (() => void) => {
     if (!isSupabaseConfigured || !myId) return () => {};
     // 通道名按身份区分，避免后台 admin 与前台共用同一通道导致 removeChannel 互相断开
@@ -306,10 +328,7 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
           const receiver = row.receiver_id as string;
           if (sender !== myId && receiver !== myId) return; // 应用层过滤：仅本人会话
           const msg = mapRow(row);
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
+          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
         }
       )
       .subscribe();
@@ -318,28 +337,57 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
     };
   }, [myId]);
 
-  /** 修改昵称（P1-3） */
-  const setNickname = useCallback((name: string) => {
-    if (identityOverride) return; // 强制身份不可改
-    const next = saveNickname(name);
-    setGuest(next);
-  }, [identityOverride]);
+  /** 修改昵称（登录态经 AuthContext 三处同步） */
+  const setNickname = useCallback(
+    (name: string) => {
+      if (identityOverride) return; // 强制身份不可改
+      const trimmed = name;
+      if (isAuthenticated && profile) {
+        // 同步 raw_user_meta_data + profiles.nickname + localStorage（由 AuthContext 完成）
+        void updateNickname(trimmed);
+      } else {
+        const next = saveNickname(trimmed);
+        setGuest(next);
+      }
+    },
+    [identityOverride, isAuthenticated, profile, updateNickname]
+  );
 
-  // 挂载：订阅 Realtime + 拉历史
+  // 挂载：登录态订阅 Realtime；游客态轮询兜底；均拉历史
   useEffect(() => {
     if (!myId) return;
-    const unsub = subscribeRealtime();
-    getConversations();
-    return unsub;
-  }, [myId, getConversations, subscribeRealtime]);
+    let unsub: (() => void) | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
+
+    if (isSupabaseConfigured) {
+      if (isAuthenticated) {
+        // 登录态：Realtime 订阅（RLS 已按身份过滤自身行）
+        unsub = subscribeRealtime();
+      }
+      void getConversations();
+      if (!isAuthenticated) {
+        // 游客态：Realtime RLS 已开启，anon 收不到自己会话实时事件 → 轮询兜底
+        pollTimer = setInterval(() => {
+          void getConversations();
+        }, 5000);
+      }
+    } else {
+      void getConversations();
+    }
+
+    return () => {
+      if (unsub) unsub();
+      if (pollTimer) clearInterval(pollTimer);
+    };
+  }, [myId, isAuthenticated, isSupabaseConfigured, getConversations, subscribeRealtime]);
 
   // 断线补拉：页面重新可见时刷新当前会话
   useEffect(() => {
     if (!myId) return;
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
-        getConversations();
-        if (activeConversationId) getMessages(activeConversationId);
+        void getConversations();
+        if (activeConversationId) void getMessages(activeConversationId);
       }
     };
     document.addEventListener('visibilitychange', onVisible);
@@ -368,7 +416,7 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
         (last.senderId === myId ? last.receiverName : last.senderName) ||
         '匿名道友';
       const unreadCount = sorted.filter(
-        (m) => m.receiverId === myId && !m.isRead
+        (m) => m.receiverId === myId && !m.isRead && !sessionReadRef.current.has(convId)
       ).length;
       result.push({
         conversationId: convId,
@@ -379,16 +427,16 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
         unreadCount,
       });
     }
-    result.sort(
-      (a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime()
-    );
+    result.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
     return result;
   }, [messages, myId]);
 
   /** 未读总数 */
   const unreadTotal = useMemo(() => {
     if (!myId) return 0;
-    return messages.filter((m) => m.receiverId === myId && !m.isRead).length;
+    return messages.filter(
+      (m) => m.receiverId === myId && !m.isRead && !sessionReadRef.current.has(m.conversationId)
+    ).length;
   }, [messages, myId]);
 
   /** 当前会话消息（升序） */
@@ -396,9 +444,7 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
     if (!activeConversationId) return [];
     return messages
       .filter((m) => m.conversationId === activeConversationId)
-      .sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [messages, activeConversationId]);
 
   const value: ChatContextValue = {
