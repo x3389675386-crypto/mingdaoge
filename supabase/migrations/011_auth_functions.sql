@@ -19,12 +19,22 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   ) OR (auth.email() = ANY (ARRAY['3389675386@qq.com']));
 $$;
 
--- 游客/用户自读私聊（SECURITY DEFINER：anon 只能取传入 guest_id 的行，杜绝全表读）
+-- 游客/用户自读私聊（SECURITY DEFINER 绕过被 RLS 拒的直读）
+-- 安全约束（关键）：
+--   - 登录用户（auth.uid() NOT NULL 且非 admin）只能读 p_guest_id = 自己 guest_id 的行，杜绝用 RPC 读他人私聊
+--   - 管理员（is_admin）可读全部
+--   - 游客（auth.uid() IS NULL）保留"传自身 guest_id"兜底（决策 C 保留游客私聊；
+--     guest_id 经 /chat?peer=<guest_id> 分享链接公开，属已知残留风险，已从"任意可读"收敛为"仅已知 guest_id"）
 CREATE OR REPLACE FUNCTION public.get_my_chat_messages(p_guest_id TEXT)
 RETURNS SETOF public.chat_messages
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT * FROM public.chat_messages
-  WHERE sender_id = p_guest_id OR receiver_id = p_guest_id
+  WHERE (sender_id = p_guest_id OR receiver_id = p_guest_id)
+    AND (
+      auth.uid() IS NULL
+      OR public.is_admin()
+      OR p_guest_id = public.my_guest_id()
+    )
   ORDER BY created_at ASC;
 $$;
 
