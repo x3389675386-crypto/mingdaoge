@@ -51,8 +51,8 @@ export interface Product {
 
 /** 购物车项接口 */
 export interface CartItem {
-  /** 关联的产品 */
-  product: Product;
+  /** 关联产品ID（引用，渲染时从 ProductProvider 解析实时数据） */
+  productId: number;
   /** 购买数量 */
   quantity: number;
 }

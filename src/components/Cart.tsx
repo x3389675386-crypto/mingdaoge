@@ -10,7 +10,7 @@ import { GreekKeyBorder } from './ChinesePattern';
 import ContactDialog from './ContactDialog';
 
 export default function Cart() {
-  const { state, dispatch, totalItems, totalPrice } = useCart();
+  const { state, dispatch, totalItems, totalPrice, getProduct } = useCart();
   const [contactOpen, setContactOpen] = useState(false);
 
   return (
@@ -63,11 +63,13 @@ export default function Cart() {
           <>
             {/* 商品列表 */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {state.items.map((item) => (
-                <div key={item.product.id}>
+              {state.items.map((item) => {
+                const product = getProduct(item.productId);
+                return (
+                <div key={item.productId}>
                   <div className="flex gap-3">
                     {/* 产品缩略图 */}
-                    {item.product.imageUrl ? (
+                    {product?.imageUrl ? (
                       <Box
                         sx={{
                           width: 64,
@@ -78,8 +80,8 @@ export default function Cart() {
                         }}
                       >
                         <img
-                          src={item.product.imageUrl}
-                          alt={item.product.name}
+                          src={product.imageUrl}
+                          alt={product.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </Box>
@@ -89,7 +91,7 @@ export default function Cart() {
                           width: 64,
                           height: 64,
                           borderRadius: '4px',
-                          background: item.product.gradient,
+                          background: product?.gradient,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -103,7 +105,7 @@ export default function Cart() {
                             color: 'rgba(255,255,255,0.6)',
                           }}
                         >
-                          {item.product.name.split('·')[0]}
+                          {product?.name?.split('·')[0] ?? ''}
                         </Typography>
                       </Box>
                     )}
@@ -119,7 +121,7 @@ export default function Cart() {
                           mb: 0.5,
                         }}
                       >
-                        {item.product.name}
+                        {product?.name ?? '商品已失效'}
                       </Typography>
                       <Typography
                         sx={{
@@ -129,8 +131,21 @@ export default function Cart() {
                           mb: 1,
                         }}
                       >
-                        ¥{item.product.price.toLocaleString()}
+                        ¥{(product?.price ?? 0).toLocaleString()}
                       </Typography>
+
+                      {!product && (
+                        <Typography
+                          sx={{
+                            fontFamily: 'var(--font-serif)',
+                            color: 'rgba(192,57,43,0.7)',
+                            fontSize: '0.75rem',
+                            mb: 1,
+                          }}
+                        >
+                          该商品已失效，请移除
+                        </Typography>
+                      )}
 
                       {/* 数量操作 */}
                       <div className="flex items-center gap-1">
@@ -139,7 +154,7 @@ export default function Cart() {
                           onClick={() =>
                             dispatch({
                               type: 'UPDATE_QTY',
-                              payload: { id: item.product.id, quantity: item.quantity - 1 },
+                              payload: { id: item.productId, quantity: item.quantity - 1 },
                             })
                           }
                           sx={{ color: 'rgba(201,169,110,0.6)', padding: '4px' }}
@@ -157,7 +172,7 @@ export default function Cart() {
                           onClick={() =>
                             dispatch({
                               type: 'UPDATE_QTY',
-                              payload: { id: item.product.id, quantity: item.quantity + 1 },
+                              payload: { id: item.productId, quantity: item.quantity + 1 },
                             })
                           }
                           sx={{ color: 'rgba(201,169,110,0.6)', padding: '4px' }}
@@ -168,7 +183,7 @@ export default function Cart() {
                         {/* 删除 */}
                         <IconButton
                           size="small"
-                          onClick={() => dispatch({ type: 'REMOVE_ITEM', payload: item.product.id })}
+                          onClick={() => dispatch({ type: 'REMOVE_ITEM', payload: item.productId })}
                           sx={{ color: 'rgba(192,57,43,0.5)', padding: '4px', ml: 'auto' }}
                         >
                           <DeleteOutlineIcon sx={{ fontSize: '0.95rem' }} />
@@ -178,7 +193,8 @@ export default function Cart() {
                   </div>
                   <Divider sx={{ borderColor: 'rgba(201,169,110,0.08)', mt: 2 }} />
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* 底部结算区 */}

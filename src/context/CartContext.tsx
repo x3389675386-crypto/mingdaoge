@@ -1,5 +1,6 @@
-import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useCallback, type Dispatch, type ReactNode } from 'react';
 import type { CartState, CartAction, Product } from '../types';
+import { useProducts } from './ProductContext';
 
 /* ===== 初始状态 ===== */
 const initialState: CartState = {
@@ -11,13 +12,13 @@ const initialState: CartState = {
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const existing = state.items.find((item) => item.product.id === action.payload.id);
+      const existing = state.items.find((item) => item.productId === action.payload.id);
       if (existing) {
         return {
           ...state,
           isOpen: true,
           items: state.items.map((item) =>
-            item.product.id === action.payload.id
+            item.productId === action.payload.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
           ),
@@ -26,14 +27,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         isOpen: true,
-        items: [...state.items, { product: action.payload, quantity: 1 }],
+        items: [...state.items, { productId: action.payload.id, quantity: 1 }],
       };
     }
 
     case 'REMOVE_ITEM':
       return {
         ...state,
-        items: state.items.filter((item) => item.product.id !== action.payload),
+        items: state.items.filter((item) => item.productId !== action.payload),
       };
 
     case 'UPDATE_QTY': {
@@ -41,13 +42,13 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       if (quantity <= 0) {
         return {
           ...state,
-          items: state.items.filter((item) => item.product.id !== id),
+          items: state.items.filter((item) => item.productId !== id),
         };
       }
       return {
         ...state,
         items: state.items.map((item) =>
-          item.product.id === id ? { ...item, quantity } : item
+          item.productId === id ? { ...item, quantity } : item
         ),
       };
     }
@@ -79,6 +80,8 @@ interface CartContextValue {
   totalPrice: number;
   /** 加入购物车快捷方法 */
   addToCart: (product: Product) => void;
+  /** 按ID解析实时产品（来自 ProductProvider） */
+  getProduct: (id: number) => Product | undefined;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -86,10 +89,17 @@ const CartContext = createContext<CartContextValue | null>(null);
 /* ===== Provider 组件 ===== */
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { allProducts } = useProducts();
+
+  /** 按ID解析实时产品（来自 ProductProvider） */
+  const getProduct = useCallback(
+    (id: number): Product | undefined => allProducts.find((p) => p.id === id),
+    [allProducts]
+  );
 
   const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = state.items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + (getProduct(item.productId)?.price ?? 0) * item.quantity,
     0
   );
 
@@ -98,7 +108,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CartContext.Provider value={{ state, dispatch, totalItems, totalPrice, addToCart }}>
+    <CartContext.Provider value={{ state, dispatch, totalItems, totalPrice, addToCart, getProduct }}>
       {children}
     </CartContext.Provider>
   );

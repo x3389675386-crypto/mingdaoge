@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip, Box } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip, Box, Button } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -8,6 +8,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { CloudPattern } from './ChinesePattern';
 import { ADMIN_GUEST_ID, ADMIN_NAME } from '../lib/chatConstants';
@@ -27,11 +28,27 @@ const navLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, dispatch } = useCart();
+  const { isAuthenticated, profile, user, signOut } = useAuth();
   const { unreadTotal, openConversation } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  /** 登录态展示名称 */
+  const displayName = profile?.nickname || user?.email || '我的';
+
+  /** 退出登录处理 */
+  const handleLogout = async () => {
+    await signOut();
+    setMobileOpen(false);
+    navigate('/');
+  };
+
+  /** 已登录时移除「登录/注册」入口 */
+  const displayLinks = isAuthenticated
+    ? navLinks.filter((l) => l.label !== '登录' && l.label !== '注册')
+    : navLinks;
 
   /** 滚动到指定 section */
   const scrollToSection = (sectionId: string) => {
@@ -92,7 +109,7 @@ export default function Navbar() {
           {/* 桌面端导航链接 */}
           {!isMobile && (
             <nav className="flex-1 flex justify-center gap-8">
-              {navLinks.map((link) => (
+              {displayLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.isRoute ? link.href : undefined}
@@ -164,6 +181,27 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
+            {/* 已登录用户：昵称 + 退出 */}
+            {isAuthenticated && (
+              <Box className="flex items-center gap-2 ml-1">
+                <span className="text-jade-white/80 text-sm" style={{ fontFamily: 'var(--font-serif)' }}>
+                  {displayName}
+                </span>
+                <Button
+                  onClick={handleLogout}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    color: '#c9a96e',
+                    borderColor: 'rgba(201,169,110,0.4)',
+                    '&:hover': { borderColor: '#c9a96e' },
+                  }}
+                >
+                  退出
+                </Button>
+              </Box>
+            )}
+
             {/* 购物车图标 */}
             <IconButton
               onClick={() => dispatch({ type: 'OPEN_CART' })}
@@ -223,7 +261,7 @@ export default function Navbar() {
         </div>
         <CloudPattern className="opacity-40 mt-2" />
         <List>
-          {navLinks.map((link) => (
+          {displayLinks.map((link) => (
             <ListItem
               key={link.href}
               component="a"
@@ -271,6 +309,30 @@ export default function Navbar() {
               />
             </ListItem>
           ))}
+          {/* 已登录用户：退出入口（移动端） */}
+          {isAuthenticated && (
+            <ListItem
+              component="a"
+              onClick={handleLogout}
+              sx={{
+                cursor: 'pointer',
+                '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },
+              }}
+            >
+              <ListItemText
+                primary={`退出（${displayName}）`}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    color: '#c9a96e',
+                    fontFamily: 'var(--font-serif)',
+                    letterSpacing: '0.1em',
+                    textAlign: 'center',
+                  },
+                }}
+              />
+            </ListItem>
+          )}
+
           {/* 管理入口 */}
           <ListItem
             component="a"

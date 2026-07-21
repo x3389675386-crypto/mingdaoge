@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box } from '@mui/material';
 import { CartProvider, useCart } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
 import { MessageProvider } from './context/MessageContext';
@@ -19,10 +19,10 @@ import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
 import ChatPage from './components/ChatPage';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import VerifyEmail from './pages/VerifyEmail';
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 import type { Product } from './types';
 
 /** MUI 深色主题定制 */
@@ -94,7 +94,14 @@ export default function App() {
               <CommentProvider>
                 <CartProvider>
                   <ChatProvider>
-                    <Routes>
+                    <Suspense
+                      fallback={
+                        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>
+                          <CircularProgress sx={{ color: '#c9a96e' }} />
+                        </Box>
+                      }
+                    >
+                      <Routes>
                       <Route path="/" element={<FrontPage />} />
                       <Route path="/forum" element={<ForumPage />} />
                       <Route path="/chat" element={<ChatPage />} />
@@ -104,6 +111,7 @@ export default function App() {
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
                     </Routes>
+                    </Suspense>
                   </ChatProvider>
                 </CartProvider>
               </CommentProvider>
