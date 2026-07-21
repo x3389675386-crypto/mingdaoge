@@ -1,50 +1,62 @@
-%% 明道阁 P2-3 私聊入口 数据结构与接口类图
+%% 明道阁 Auth · 数据模型关系类图
 
 classDiagram
-    class ForumPost {
-      +number id
-      +string author
-      +string title
-      +string content
-      +string category
-      +string createdAt
-      +string imageUrl
-      +number likes
-      +string guest_id
+    class Profile {
+        +uuid id  「PK, =auth.users.id」
+        +text guest_id  «UNIQUE»
+        +text nickname
+        +text chat_guest_id  「客服='admin'」
+        +text role  «user/admin/agent»
+        +timestamptz created_at
     }
-    class ForumComment {
-      +number id
-      +number postId
-      +string author
-      +string content
-      +string createdAt
-      +string guest_id
+    class ChatMessages {
+        +bigint id
+        +text conversation_id
+        +text sender_id   «=guest_id»
+        +text receiver_id «=guest_id»
+        +text content
+        +text type
+        +boolean is_read
     }
-    class Review {
-      +number id
-      +string nickname
-      +string content
-      +string imageUrl
-      +number productId
-      +string createdAt
-      +string guest_id
+    class ForumPosts {
+        +bigint id
+        +text guest_id
+        +text title
+        +text content
     }
-    class ChatContextValue {
-      +GuestIdentity guest
-      +boolean ensureIdentity()
-      +void openConversation(peerId, peerName)
-      +void setNickname(name)
-      +ChatConversation[] conversations
-      +number unreadTotal
+    class ForumComments {
+        +bigint id
+        +bigint post_id
+        +text guest_id
+        +text content
     }
-    class useIdentityGate {
-      +void withIdentity(action)
-      +ReactNode dialog
+    class Reviews {
+        +bigint id
+        +text guest_id
+        +text content
     }
-    class ChatPage {
-      -pendingPeerRef
-      +handleNicknameClose()
+    class Messages {
+        +bigint id
+        +text guest_id
+        +text content
     }
-    ChatPage ..> ChatContextValue : useChat()
-    useIdentityGate ..> ChatContextValue : useChat()
-    ChatPage ..> useIdentityGate : 发布场景可选复用
+    class AuthContext {
+        +getMyGuestId() string
+        +signUp() / signInPassword()
+        +signInOtp() / verifyOtp()
+        +profile: Profile
+    }
+    class ChatContext {
+        +myId: string
+        +sendMessage()
+        +getConversations()
+    }
+
+    Profile "1" --> "0..*" ChatMessages : guest_id = sender_id / receiver_id
+    Profile "1" --> "0..*" ForumPosts   : guest_id
+    Profile "1" --> "0..*" ForumComments: guest_id
+    Profile "1" --> "0..*" Reviews      : guest_id
+    Profile "1" --> "0..*" Messages     : guest_id
+    AuthContext "1" --> "1" Profile : 载入/绑定
+    AuthContext "1" --> "1" ChatContext : 提供 getMyGuestId()
+    ChatContext "1" --> "0..*" ChatMessages : RPC 读写

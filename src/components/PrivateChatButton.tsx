@@ -1,7 +1,7 @@
 import { IconButton, Tooltip } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useNavigate } from 'react-router-dom';
-import { useChat } from '../context/ChatContext';
+import { useAuth } from '../context/AuthContext';
 
 interface PrivateChatButtonProps {
   /** 对方聊天身份 guest_id；为空（历史内容 / 未落身份）时不渲染按钮 */
@@ -22,8 +22,8 @@ interface PrivateChatButtonProps {
  */
 export default function PrivateChatButton({ guestId, nickname }: PrivateChatButtonProps) {
   const navigate = useNavigate();
-  const { guest } = useChat();
-  const myId = guest?.guest_id;
+  const { getMyGuestId } = useAuth();
+  const myId = getMyGuestId();
 
   // 无 guest_id（旧内容 / 未落身份）或作者即自己 → 隐藏按钮
   if (!guestId || guestId === myId) return null;
