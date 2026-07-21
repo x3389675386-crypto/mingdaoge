@@ -19,6 +19,10 @@ import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
 import ChatPage from './components/ChatPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import type { Product } from './types';
 
 /** MUI 深色主题定制 */
@@ -95,6 +99,10 @@ export default function App() {
                       <Route path="/forum" element={<ForumPage />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/admin" element={<AdminPanel />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/verify-email" element={<VerifyEmail />} />
                     </Routes>
                   </ChatProvider>
                 </CartProvider>

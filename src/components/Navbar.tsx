@@ -20,6 +20,8 @@ const navLinks = [
   { label: '私聊', href: '/chat', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },
   { label: '联系', href: '#footer', sectionId: 'footer' },
+  { label: '登录', href: '/login', isRoute: true },
+  { label: '注册', href: '/register', isRoute: true },
 ];
 
 export default function Navbar() {
