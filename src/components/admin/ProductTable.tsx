@@ -146,7 +146,7 @@ export default function ProductTable() {
                     >
                       <img
                         src={product.imageUrl}
-                        alt={product.name}
+                        alt={product.name ?? ''}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </Box>
@@ -156,7 +156,7 @@ export default function ProductTable() {
                         width: 44,
                         height: 44,
                         borderRadius: '4px',
-                        background: product.gradient,
+                        background: product.gradient ?? '',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -169,7 +169,7 @@ export default function ProductTable() {
                           color: 'rgba(255,255,255,0.6)',
                         }}
                       >
-                        {product.name.split('·')[0]}
+                        {product.name?.split('·')[0] ?? ''}
                       </Typography>
                     </Box>
                   )}
@@ -178,10 +178,10 @@ export default function ProductTable() {
                 {/* 名称 & 材质 */}
                 <TableCell>
                   <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '0.9rem' }}>
-                    {product.name}
+                    {product.name ?? '未命名'}
                   </Typography>
                   <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.4)', fontSize: '0.75rem' }}>
-                    {product.material} · {product.origin}
+                    {(product.material ?? '')} · {(product.origin ?? '')}
                   </Typography>
                 </TableCell>
 
@@ -204,7 +204,7 @@ export default function ProductTable() {
                 {/* 价格 */}
                 <TableCell>
                   <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#c9a96e', fontWeight: 600 }}>
-                    ¥{product.price.toLocaleString()}
+                    ¥{(typeof product.price === 'number' && Number.isFinite(product.price) ? product.price : 0).toLocaleString()}
                   </Typography>
                 </TableCell>
 

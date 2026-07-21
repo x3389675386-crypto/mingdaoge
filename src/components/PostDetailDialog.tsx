@@ -48,7 +48,7 @@ interface PostDetailDialogProps {
 export default function PostDetailDialog({ open, onClose, post }: PostDetailDialogProps) {
   const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
   const { likePost, posts: forumPosts, gongfaMaterials, hasLiked } = useForum();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
   const [newComment, setNewComment] = useState({ author: '', content: '' });
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState('');
@@ -74,6 +74,10 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
   };
 
   const handleSubmitComment = async () => {
+    if (!isAuthenticated) {
+      setCommentError('登录后才能评论~');
+      return;
+    }
     if (!newComment.content.trim()) {
       setCommentError('评论内容不能为空');
       return;
@@ -84,7 +88,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
       setCommentError('');
       await addComment({
         postId: post.id,
-        author: newComment.author.trim() || '匿名道友',
+        author: profile?.nickname?.trim() || newComment.author.trim() || '匿名道友',
         content: newComment.content.trim(),
       });
       setNewComment({ author: '', content: '' });

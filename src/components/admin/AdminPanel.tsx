@@ -18,6 +18,7 @@ import { useMessages } from '../../context/MessageContext';
 import { useChat } from '../../context/ChatContext';
 import { ChatProvider } from '../../context/ChatContext';
 import { ADMIN_GUEST_ID, ADMIN_NAME } from '../../lib/chatConstants';
+import ErrorBoundary from '../ErrorBoundary';
 
 /** Tab 面板容器 */
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
@@ -252,7 +253,10 @@ export default function AdminPanel() {
   return (
     <AdminRoute>
       <ChatProvider identityOverride={ADMIN_IDENTITY}>
-        <AdminPanelInner />
+        {/* 错误边界：捕获任一 Tab 面板的渲染异常，避免单点崩溃导致整页白屏，并显示错误信息便于定位 */}
+        <ErrorBoundary title="管理面板出错了">
+          <AdminPanelInner />
+        </ErrorBoundary>
       </ChatProvider>
     </AdminRoute>
   );

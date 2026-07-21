@@ -55,7 +55,7 @@ const QUICK_EMOJIS = ['👍', '😂', '🔥', '👏', '💡', '🍀', '🙏', '�
 export default function ForumPage() {
   const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning } = useForum();
   const { commentsByPostId } = useComments();
-  const { isAdmin, isAuthenticated } = useAuth();
+  const { isAdmin, isAuthenticated, profile } = useAuth();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -131,6 +131,10 @@ export default function ForumPage() {
   };
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      setSnackbar({ open: true, message: '登录后才能发帖~', severity: 'info' });
+      return;
+    }
     let valid = true;
     if (!newPost.title.trim()) { setTitleError(true); valid = false; }
     if (!newPost.content.trim()) { setContentError(true); valid = false; }
@@ -164,7 +168,7 @@ export default function ForumPage() {
         }
 
         await addPost({
-          author: newPost.author.trim() || '匿名道友',
+          author: profile?.nickname?.trim() || newPost.author.trim() || '匿名道友',
           title: newPost.title.trim(),
           content: newPost.content.trim(),
           category: newPost.category,

@@ -30,7 +30,7 @@ const navLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, dispatch } = useCart();
-  const { isAuthenticated, profile, user, signOut } = useAuth();
+  const { isAuthenticated, profile, user, signOut, isAdmin } = useAuth();
   const { unreadTotal, openConversation } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
@@ -220,6 +220,22 @@ export default function Navbar() {
                     {profile.user_code ? ` · ${profile.user_code}` : ''}
                   </span>
                 </Box>
+                {/* 后台管理入口（仅管理员可见，金色风格，与「个人中心」并列） */}
+                {isAdmin && (
+                  <Button
+                    onClick={() => navigate('/admin')}
+                    size="small"
+                    sx={{
+                      color: '#c9a96e',
+                      fontFamily: 'var(--font-serif)',
+                      textTransform: 'none',
+                      ml: 0.5,
+                      '&:hover': { color: '#b8975c' },
+                    }}
+                  >
+                    后台管理
+                  </Button>
+                )}
                 <Button
                   onClick={handleLogout}
                   size="small"
@@ -382,6 +398,29 @@ export default function Navbar() {
                   }}
                 />
               </ListItem>
+              {/* 后台管理入口（仅管理员可见，移动端） */}
+              {isAdmin && (
+                <ListItem
+                  component="a"
+                  onClick={() => { setMobileOpen(false); navigate('/admin'); }}
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },
+                  }}
+                >
+                  <ListItemText
+                    primary="后台管理"
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        color: '#c9a96e',
+                        fontFamily: 'var(--font-serif)',
+                        letterSpacing: '0.1em',
+                        textAlign: 'center',
+                      },
+                    }}
+                  />
+                </ListItem>
+              )}
             </>
           )}
 
