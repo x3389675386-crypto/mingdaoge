@@ -28,6 +28,7 @@ const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const ExchangePage = lazy(() => import('./pages/ExchangePage'));
+const Profile = lazy(() => import('./pages/Profile'));
 import type { Product } from './types';
 
 /** MUI 深色主题定制 */
@@ -118,6 +119,7 @@ export default function App() {
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/admin" element={<AdminPanel />} />
                       <Route path="/exchange" element={<ExchangePage />} />
+                      <Route path="/profile" element={<Profile />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />

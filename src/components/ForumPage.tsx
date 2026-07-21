@@ -34,7 +34,6 @@ import { useComments } from '../context/CommentContext';
 import { FORUM_CATEGORIES, type ForumPost } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { useIdentityGate } from '../hooks/useIdentityGate';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
@@ -57,7 +56,6 @@ export default function ForumPage() {
   const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning } = useForum();
   const { commentsByPostId } = useComments();
   const { isAdmin, isAuthenticated } = useAuth();
-  const identityGate = useIdentityGate();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -132,17 +130,16 @@ export default function ForumPage() {
     void likePost(post.id);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let valid = true;
     if (!newPost.title.trim()) { setTitleError(true); valid = false; }
     if (!newPost.content.trim()) { setContentError(true); valid = false; }
     if (!valid) return;
 
-    identityGate.withIdentity(async () => {
-      try {
-        let imageUrl: string | undefined;
+    try {
+      let imageUrl: string | undefined;
 
-        if (newPost.imageFile) {
+      if (newPost.imageFile) {
           if (isSupabaseConfigured) {
             const fileExt = newPost.imageFile.name.split('.').pop() || 'jpg';
             const filePath = `forum_${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
@@ -187,7 +184,6 @@ export default function ForumPage() {
         console.error('发帖失败:', err);
         setSnackbar({ open: true, message: msg || '发帖失败，请重试', severity: 'error' });
       }
-    });
   };
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -562,8 +558,6 @@ export default function ForumPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      {identityGate.dialog}
 
       <Footer />
 

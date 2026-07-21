@@ -67,6 +67,10 @@ interface AuthContextValue {
   resetPassword: (email: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   updateNickname: (name: string) => Promise<void>;
+  /** 修改身份（大类 + 二级细分），仅登录态可用 */
+  updateIdentity: (type: IdentityType, subtype?: string | null) => Promise<void>;
+  /** 修改密码（Supabase auth.updateUser），返回中文错误文案或空对象 */
+  updatePassword: (newPassword: string) => Promise<AuthResult>;
   /** 重新拉取当前用户 profile（余额变动后用于刷新导航栏余额） */
   refreshProfile: () => Promise<void>;
 }
@@ -285,6 +289,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadProfile(user);
   }, [user, loadProfile]);
 
+  /**
+   * 修改身份：更新 profiles.identity_type / identity_subtype 并同步本地 profile 状态。
+   * 仅登录态可用（游客态忽略）。
+   */
+  const updateIdentity = useCallback(
+    async (type: IdentityType, subtype?: string | null) => {
+      if (isSupabaseConfigured && user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ identity_type: type, identity_subtype: subtype ?? null })
+          .eq('id', user.id);
+        if (error) console.error('[明道阁] 更新身份失败:', error.message);
+        setProfile((prev) =>
+          prev ? { ...prev, identity_type: type, identity_subtype: subtype ?? null } : prev
+        );
+      }
+    },
+    [user]
+  );
+
+  /**
+   * 修改密码：调用 Supabase auth.updateUser，错误经 mapAuthError 映射为中文文案。
+   */
+  const updatePassword = useCallback(
+    async (newPassword: string): Promise<AuthResult> => {
+      if (!isSupabaseConfigured) return { error: '服务暂未配置，无法修改密码' };
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { error: mapAuthError(error) };
+      return {};
+    },
+    []
+  );
+
   const value: AuthContextValue = {
     session,
     user,
@@ -301,6 +338,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     signOut,
     updateNickname,
+    updateIdentity,
+    updatePassword,
     refreshProfile,
   };
 

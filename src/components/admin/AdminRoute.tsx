@@ -1,40 +1,75 @@
-import { useState, type ReactNode } from 'react';
-import { Box, TextField, Button, Typography } from '@mui/material';
+import { type ReactNode } from 'react';
+import { Box, Button, Typography } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
-
-/** 管理面板密码 */
-const ADMIN_PASSWORD = 'mingdao2026';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface AdminRouteProps {
   children: ReactNode;
 }
 
-/** 简易密码验证守卫 */
+/** 基于登录态的权限守卫（与 AuthContext.isAdmin 对齐） */
 export default function AdminRoute({ children }: AdminRouteProps) {
-  const [authenticated, setAuthenticated] = useState(() => {
-    return sessionStorage.getItem('mingdao_admin_auth') === 'true';
-  });
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const { isAdmin, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      sessionStorage.setItem('mingdao_admin_auth', 'true');
-      setError(false);
-    } else {
-      setError(true);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleLogin();
-  };
-
-  if (authenticated) {
+  // 管理员：直接放行
+  if (isAdmin) {
     return <>{children}</>;
   }
 
+  // 已登录但非管理员：无权限提示
+  if (isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          minHeight: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            width: 340,
+            p: 4,
+            borderRadius: '4px',
+            border: '1px solid rgba(201,169,110,0.15)',
+            backgroundColor: 'rgba(22,33,62,0.8)',
+            textAlign: 'center',
+          }}
+        >
+          <LockIcon sx={{ fontSize: '2rem', color: '#c9a96e', mb: 2 }} />
+          <Typography
+            sx={{
+              fontFamily: 'var(--font-serif)',
+              color: '#f5f0eb',
+              fontSize: '1.1rem',
+              mb: 3,
+            }}
+          >
+            无权限访问管理后台
+          </Typography>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => navigate('/')}
+            sx={{
+              backgroundColor: 'rgba(201,169,110,0.8)',
+              color: '#1a1a2e',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 600,
+              '&:hover': { backgroundColor: '#c9a96e' },
+            }}
+          >
+            返回首页
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // 未登录：引导登录
   return (
     <Box
       sx={{
@@ -63,38 +98,12 @@ export default function AdminRoute({ children }: AdminRouteProps) {
             mb: 3,
           }}
         >
-          明道阁管理后台
+          请以管理员账号登录后访问
         </Typography>
-        <TextField
-          fullWidth
-          type="password"
-          label="请输入管理密码"
-          value={password}
-          onChange={(e) => { setPassword(e.target.value); setError(false); }}
-          onKeyDown={handleKeyDown}
-          error={error}
-          helperText={error ? '密码错误' : ''}
-          sx={{
-            mb: 2,
-            '& .MuiOutlinedInput-root': {
-              fontFamily: 'var(--font-serif)',
-              color: '#f5f0eb',
-              '& fieldset': { borderColor: 'rgba(201,169,110,0.2)' },
-              '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.4)' },
-            },
-            '& .MuiInputLabel-root': {
-              fontFamily: 'var(--font-serif)',
-              color: 'rgba(245,240,235,0.5)',
-            },
-            '& .MuiFormHelperText-root': {
-              fontFamily: 'var(--font-serif)',
-            },
-          }}
-        />
         <Button
           fullWidth
           variant="contained"
-          onClick={handleLogin}
+          onClick={() => navigate('/login')}
           sx={{
             backgroundColor: 'rgba(201,169,110,0.8)',
             color: '#1a1a2e',
@@ -103,7 +112,7 @@ export default function AdminRoute({ children }: AdminRouteProps) {
             '&:hover': { backgroundColor: '#c9a96e' },
           }}
         >
-          进入管理
+          去登录
         </Button>
       </Box>
     </Box>

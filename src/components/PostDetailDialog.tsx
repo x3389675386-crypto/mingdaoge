@@ -23,7 +23,6 @@ import { FORUM_CATEGORIES } from '../types';
 import { useComments } from '../context/CommentContext';
 import { useForum } from '../context/ForumContext';
 import { useAuth } from '../context/AuthContext';
-import { useIdentityGate } from '../hooks/useIdentityGate';
 import PrivateChatButton from './PrivateChatButton';
 import DownloadIcon from '@mui/icons-material/Download';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -48,7 +47,6 @@ interface PostDetailDialogProps {
 
 export default function PostDetailDialog({ open, onClose, post }: PostDetailDialogProps) {
   const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
-  const identityGate = useIdentityGate();
   const { likePost, posts: forumPosts, gongfaMaterials, hasLiked } = useForum();
   const { isAuthenticated } = useAuth();
   const [newComment, setNewComment] = useState({ author: '', content: '' });
@@ -75,14 +73,12 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
     return d.toLocaleDateString('zh-CN');
   };
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = async () => {
     if (!newComment.content.trim()) {
       setCommentError('评论内容不能为空');
       return;
     }
 
-    // 发布前确保已设置聊天昵称（P2-3 Q5 / P0-2 行为变更：评论必须落 guest_id）
-    identityGate.withIdentity(async () => {
     try {
       setSubmitting(true);
       setCommentError('');
@@ -98,7 +94,6 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
     } finally {
       setSubmitting(false);
     }
-    });
   };
 
   const handleClose = () => {
@@ -505,7 +500,6 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
         </Box>
       </DialogContent>
     </Dialog>
-      {identityGate.dialog}
     </>
   );
 }

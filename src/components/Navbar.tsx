@@ -193,9 +193,22 @@ export default function Navbar() {
               <Box className="flex items-center gap-2 ml-1">
                 <Box className="flex flex-col items-end leading-tight">
                   <Box className="flex items-center gap-1.5">
-                    <span className="text-jade-white/90 text-sm" style={{ fontFamily: 'var(--font-serif)' }}>
-                      {displayName}
-                    </span>
+                    <Tooltip title="个人中心">
+                      <Box
+                        component="span"
+                        onClick={() => navigate('/profile')}
+                        sx={{
+                          fontFamily: 'var(--font-serif)',
+                          color: 'rgba(245,240,235,0.9)',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'color 0.2s',
+                          '&:hover': { color: '#c9a96e' },
+                        }}
+                      >
+                        {displayName}
+                      </Box>
+                    </Tooltip>
                     {identityLabel && (
                       <span className="text-[0.65rem] px-1.5 py-px rounded-full bg-gold/15 text-gold border border-gold/30">
                         {identityLabel}
