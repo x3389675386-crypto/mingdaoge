@@ -1,62 +1,143 @@
-%% 明道阁 Auth · 数据模型关系类图
-
 classDiagram
-    class Profile {
-        +uuid id  「PK, =auth.users.id」
-        +text guest_id  «UNIQUE»
-        +text nickname
-        +text chat_guest_id  「客服='admin'」
-        +text role  «user/admin/agent»
-        +timestamptz created_at
-    }
-    class ChatMessages {
-        +bigint id
-        +text conversation_id
-        +text sender_id   «=guest_id»
-        +text receiver_id «=guest_id»
-        +text content
-        +text type
-        +boolean is_read
-    }
-    class ForumPosts {
-        +bigint id
-        +text guest_id
-        +text title
-        +text content
-    }
-    class ForumComments {
-        +bigint id
-        +bigint post_id
-        +text guest_id
-        +text content
-    }
-    class Reviews {
-        +bigint id
-        +text guest_id
-        +text content
-    }
-    class Messages {
-        +bigint id
-        +text guest_id
-        +text content
-    }
-    class AuthContext {
-        +getMyGuestId() string
-        +signUp() / signInPassword()
-        +signInOtp() / verifyOtp()
-        +profile: Profile
-    }
-    class ChatContext {
-        +myId: string
-        +sendMessage()
-        +getConversations()
+    %% ===== 数据模型（Supabase 表前端镜像）=====
+    class ProfileRow {
+        +id: string
+        +guest_id: string
+        +nickname: string
+        +chat_guest_id: string
+        +role: 'user' | 'admin' | 'agent'
+        +created_at: string
+        +identity_type: 'customer' | 'sanxiu' | 'famai'
+        +identity_subtype: string
+        +user_code: string
+        +yang_de: number
+        +points: number
     }
 
-    Profile "1" --> "0..*" ChatMessages : guest_id = sender_id / receiver_id
-    Profile "1" --> "0..*" ForumPosts   : guest_id
-    Profile "1" --> "0..*" ForumComments: guest_id
-    Profile "1" --> "0..*" Reviews      : guest_id
-    Profile "1" --> "0..*" Messages     : guest_id
-    AuthContext "1" --> "1" Profile : 载入/绑定
-    AuthContext "1" --> "1" ChatContext : 提供 getMyGuestId()
-    ChatContext "1" --> "0..*" ChatMessages : RPC 读写
+    class ForumPost {
+        +id: number
+        +author: string
+        +title: string
+        +content: string
+        +category: string
+        +created_at: string
+        +image_url: string
+        +likes: number
+        +guest_id: string
+    }
+
+    class ForumCategory {
+        +id: number
+        +value: string
+        +label: string
+        +icon: string
+        +sort_order: number
+        +is_system: boolean
+    }
+
+    class ForumPostLike {
+        +post_id: number
+        +user_id: string
+        +created_at: string
+    }
+
+    class GongfaMaterial {
+        +id: number
+        +post_id: number
+        +file_url: string
+        +file_name: string
+        +file_size: number
+        +uploaded_by: string
+    }
+
+    class ExchangeItem {
+        +id: number
+        +title: string
+        +description: string
+        +cost_kind: 'yang_de' | 'points'
+        +cost_amount: number
+        +stock: number
+        +item_type: 'bracelet' | 'cash' | 'magic_tool' | 'retreat_card'
+        +status: 'active' | 'inactive'
+        +sort_order: number
+    }
+
+    class ExchangeOrder {
+        +id: number
+        +user_id: string
+        +item_id: number
+        +kind: 'redeem' | 'cashout'
+        +cost_kind: 'yang_de' | 'points'
+        +amount: number
+        +status: 'pending' | 'approved' | 'rejected' | 'fulfilled'
+        +note: string
+        +operator_id: string
+    }
+
+    class RewardLedger {
+        +id: number
+        +user_id: string
+        +kind: 'yang_de' | 'points'
+        +delta: number
+        +balance_after: number
+        +reason: string
+        +operator_id: string
+    }
+
+    class UserIdentity {
+        +id: number
+        +type: 'customer' | 'sanxiu' | 'famai'
+        +key: string
+        +label: string
+        +description: string
+        +sort_order: number
+    }
+
+    %% ===== 关系 =====
+    ForumPost "1" --> "0..1" ForumCategory : category = value
+    ForumPost "1" *-- "0..*" ForumPostLike : 登录用户一次点赞
+    ForumPost "1" *-- "0..*" GongfaMaterial : 功法电子书（post_id）
+    ForumCategory "1" --> "0..*" ForumPost
+    ExchangeOrder "0..*" --> "1" ExchangeItem : item_id
+    ProfileRow "1" --> "0..*" RewardLedger : user_id
+    ProfileRow "1" --> "0..*" ExchangeOrder : user_id
+    UserIdentity "1" --> "0..*" ProfileRow : type+subtype 映射（前端常量镜像）
+
+    %% ===== 上下文 / 服务层 =====
+    class AuthContext {
+        +profile: ProfileRow
+        +isAdmin: boolean
+        +signUp(email, password, nickname, identity)
+        +getMyGuestId(): string
+    }
+
+    class ForumContext {
+        +categories: ForumCategory[]
+        +posts: ForumPost[]
+        +loadCategories()
+        +addPost(post, ebookFile?)
+        +likePost(id)
+        +deletePost(id)
+    }
+
+    class ExchangeContext {
+        +items: ExchangeItem[]
+        +orders: ExchangeOrder[]
+        +myLedger: RewardLedger[]
+        +redeem(itemId)
+        +requestCashout(amount)
+    }
+
+    class ChatContext {
+        +openConversation(peerId, name)
+        +resolveById(code): { guest_id, nickname }
+    }
+
+    AuthContext ..> ProfileRow : 读取/更新
+    ForumContext ..> ForumPost
+    ForumContext ..> ForumCategory
+    ForumContext ..> GongfaMaterial
+    ExchangeContext ..> ExchangeItem
+    ExchangeContext ..> ExchangeOrder
+    ExchangeContext ..> RewardLedger
+    ChatContext ..> ProfileRow : resolveById

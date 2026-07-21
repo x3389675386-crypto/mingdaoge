@@ -8,6 +8,7 @@ import { ReviewProvider } from './context/ReviewContext';
 import { ForumProvider } from './context/ForumContext';
 import { CommentProvider } from './context/CommentContext';
 import { ChatProvider } from './context/ChatContext';
+import { ExchangeProvider } from './context/ExchangeContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
@@ -19,10 +20,14 @@ import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
 import ChatPage from './components/ChatPage';
+import SectionStringCollection from './components/front/SectionStringCollection';
+import SectionDaoTreasury from './components/front/SectionDaoTreasury';
+import SectionMeritSquare from './components/front/SectionMeritSquare';
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ExchangePage = lazy(() => import('./pages/ExchangePage'));
 import type { Product } from './types';
 
 /** MUI 深色主题定制 */
@@ -65,8 +70,13 @@ function FrontPage() {
 
       <main>
         <Hero />
-        <ProductGrid onDetail={handleDetail} onAddToCart={addToCart} />
+        <SectionStringCollection onDetail={handleDetail} onAddToCart={addToCart} onBuy={addToCart} />
+        <Box id="products">
+          <ProductGrid onDetail={handleDetail} onAddToCart={addToCart} />
+        </Box>
         <ReviewSection />
+        <SectionDaoTreasury />
+        <SectionMeritSquare />
         <About />
       </main>
 
@@ -94,6 +104,7 @@ export default function App() {
               <CommentProvider>
                 <CartProvider>
                   <ChatProvider>
+                    <ExchangeProvider>
                     <Suspense
                       fallback={
                         <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>
@@ -106,12 +117,14 @@ export default function App() {
                       <Route path="/forum" element={<ForumPage />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/admin" element={<AdminPanel />} />
+                      <Route path="/exchange" element={<ExchangePage />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
                     </Routes>
                     </Suspense>
+                    </ExchangeProvider>
                   </ChatProvider>
                 </CartProvider>
               </CommentProvider>

@@ -12,12 +12,14 @@ import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { CloudPattern } from './ChinesePattern';
 import { ADMIN_GUEST_ID, ADMIN_NAME } from '../lib/chatConstants';
+import { getIdentityLabel } from '../lib/identities';
 
 /** 导航链接列表 */
 const navLinks = [
   { label: '首页', href: '#hero', sectionId: 'hero' },
   { label: '产品', href: '#products', sectionId: 'products' },
   { label: '论坛', href: '/forum', isRoute: true },
+  { label: '兑换', href: '/exchange', isRoute: true },
   { label: '私聊', href: '/chat', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },
   { label: '联系', href: '#footer', sectionId: 'footer' },
@@ -37,6 +39,11 @@ export default function Navbar() {
 
   /** 登录态展示名称 */
   const displayName = profile?.nickname || user?.email || '我的';
+
+  /** 登录态身份标签（散修·风水师 / 法脉·道医 / 顾客） */
+  const identityLabel = profile
+    ? getIdentityLabel(profile.identity_type, profile.identity_subtype)
+    : '';
 
   /** 退出登录处理 */
   const handleLogout = async () => {
@@ -181,12 +188,25 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
-            {/* 已登录用户：昵称 + 退出 */}
-            {isAuthenticated && (
+            {/* 已登录用户：身份 + 余额 + 退出 */}
+            {isAuthenticated && profile && (
               <Box className="flex items-center gap-2 ml-1">
-                <span className="text-jade-white/80 text-sm" style={{ fontFamily: 'var(--font-serif)' }}>
-                  {displayName}
-                </span>
+                <Box className="flex flex-col items-end leading-tight">
+                  <Box className="flex items-center gap-1.5">
+                    <span className="text-jade-white/90 text-sm" style={{ fontFamily: 'var(--font-serif)' }}>
+                      {displayName}
+                    </span>
+                    {identityLabel && (
+                      <span className="text-[0.65rem] px-1.5 py-px rounded-full bg-gold/15 text-gold border border-gold/30">
+                        {identityLabel}
+                      </span>
+                    )}
+                  </Box>
+                  <span className="text-[0.7rem] text-jade-white/55 tracking-wide">
+                    阳德 {profile.yang_de} · 积分 {profile.points}
+                    {profile.user_code ? ` · ${profile.user_code}` : ''}
+                  </span>
+                </Box>
                 <Button
                   onClick={handleLogout}
                   size="small"
@@ -309,28 +329,47 @@ export default function Navbar() {
               />
             </ListItem>
           ))}
-          {/* 已登录用户：退出入口（移动端） */}
-          {isAuthenticated && (
-            <ListItem
-              component="a"
-              onClick={handleLogout}
-              sx={{
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },
-              }}
-            >
-              <ListItemText
-                primary={`退出（${displayName}）`}
+          {/* 已登录用户：身份 + 余额 + 退出入口（移动端） */}
+          {isAuthenticated && profile && (
+            <>
+              <ListItem
+                sx={{ cursor: 'default', flexDirection: 'column', alignItems: 'center', py: 1.5 }}
+              >
+                <Box className="flex flex-col items-center gap-0.5">
+                  <span
+                    className="text-jade-white/90 text-sm"
+                    style={{ fontFamily: 'var(--font-serif)' }}
+                  >
+                    {displayName}
+                    {identityLabel ? ` · ${identityLabel}` : ''}
+                  </span>
+                  <span className="text-[0.7rem] text-jade-white/55">
+                    阳德 {profile.yang_de} · 积分 {profile.points}
+                    {profile.user_code ? ` · ${profile.user_code}` : ''}
+                  </span>
+                </Box>
+              </ListItem>
+              <ListItem
+                component="a"
+                onClick={handleLogout}
                 sx={{
-                  '& .MuiListItemText-primary': {
-                    color: '#c9a96e',
-                    fontFamily: 'var(--font-serif)',
-                    letterSpacing: '0.1em',
-                    textAlign: 'center',
-                  },
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: 'rgba(201,169,110,0.08)' },
                 }}
-              />
-            </ListItem>
+              >
+                <ListItemText
+                  primary="退出"
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      color: '#c9a96e',
+                      fontFamily: 'var(--font-serif)',
+                      letterSpacing: '0.1em',
+                      textAlign: 'center',
+                    },
+                  }}
+                />
+              </ListItem>
+            </>
           )}
 
           {/* 管理入口 */}

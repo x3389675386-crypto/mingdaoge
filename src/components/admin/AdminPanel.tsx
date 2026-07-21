@@ -8,6 +8,11 @@ import MessagePanel from './MessagePanel';
 import ReviewPanel from './ReviewPanel';
 import BuyGuideAdmin from './BuyGuideAdmin';
 import ChatView from '../ChatView';
+import ExchangeItemPanel from './ExchangeItemPanel';
+import CashoutPanel from './CashoutPanel';
+import RewardPanel from './RewardPanel';
+import GongfaPanel from './GongfaPanel';
+import CategoryPanel from './CategoryPanel';
 import { GreekKeyBorder } from '../ChinesePattern';
 import { useMessages } from '../../context/MessageContext';
 import { useChat } from '../../context/ChatContext';
@@ -136,6 +141,37 @@ function AdminPanelInner() {
         />
         <Tab label="晒图管理" />
         <Tab label="购买引导图" />
+        <Tab label="兑换项" />
+        <Tab
+          label={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              阳德提现
+              {unreadTotal > 0 && (
+                <Box
+                  component="span"
+                  sx={{
+                    backgroundColor: '#c0392b',
+                    color: '#f5f0eb',
+                    fontSize: '0.65rem',
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    px: 0.5,
+                  }}
+                >
+                  {unreadTotal}
+                </Box>
+              )}
+            </span>
+          }
+        />
+        <Tab label="奖励调整" />
+        <Tab label="功法管理" />
+        <Tab label="论坛分类" />
         <Tab
           label={
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -178,6 +214,21 @@ function AdminPanelInner() {
         <BuyGuideAdmin />
       </TabPanel>
       <TabPanel value={tabValue} index={4}>
+        <ExchangeItemPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={5}>
+        <CashoutPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={6}>
+        <RewardPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={7}>
+        <GongfaPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={8}>
+        <CategoryPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={9}>
         <AdminChatTab />
       </TabPanel>
 
@@ -190,7 +241,7 @@ function AdminPanelInner() {
             fontSize: '0.75rem',
           }}
         >
-          数据保存在浏览器本地存储中，清除浏览器数据将重置为默认
+          产品 / 留言 / 晒图仍为本地存储；论坛、身份、兑换、提现、奖励均存于云端数据库
         </Typography>
       </Box>
     </div>

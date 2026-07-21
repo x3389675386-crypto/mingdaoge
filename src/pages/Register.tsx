@@ -6,9 +6,11 @@ import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { TextField, Button, Box, Alert } from '@mui/material';
 import AuthCard from '../components/AuthCard';
+import IdentitySelector, { type IdentityValue } from '../components/IdentitySelector';
 import { useAuth } from '../context/AuthContext';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
 import { authFieldSx, authButtonSx } from './authStyles';
+import type { IdentityType } from '../types';
 
 export default function Register() {
   const { signUp } = useAuth();
@@ -17,6 +19,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [identity, setIdentity] = useState<IdentityValue>({ type: 'customer', subtype: 'customer' });
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,14 +51,19 @@ export default function Register() {
       return;
     }
     setLoading(true);
-    const { error: err } = await signUp(e, password, filter.filteredText);
+    const { error: err } = await signUp(e, password, filter.filteredText, {
+      type: identity.type as IdentityType,
+      subtype: identity.subtype,
+    });
     setLoading(false);
     if (err) {
       setError(err);
       return;
     }
-    setInfo('注册成功！若开启邮箱验证，请查收验证邮件后登录。');
-    setTimeout(() => navigate('/'), 1500);
+    setInfo(
+      '注册成功！若开启邮箱验证，请查收验证邮件并登录。登录后系统将为您生成专属 ID（MDG-开头），可在导航栏查看。'
+    );
+    setTimeout(() => navigate('/'), 2200);
   };
 
   return (
@@ -123,12 +131,15 @@ export default function Register() {
         sx={authFieldSx}
         margin="normal"
       />
+      <Box sx={authFieldSx} marginTop="8px !important">
+        <IdentitySelector value={identity} onChange={setIdentity} />
+      </Box>
       <Button
         fullWidth
         variant="contained"
         onClick={handleRegister}
         disabled={loading}
-        sx={authButtonSx}
+        sx={{ ...authButtonSx, mt: 1 }}
       >
         注册
       </Button>

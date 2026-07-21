@@ -23,6 +23,13 @@ import { getGuest, setNickname as saveNickname, syncGuestId } from '../lib/guest
 import { resolveGuestId, type ProfileRow } from '../lib/identity';
 import { mapAuthError } from '../lib/authErrors';
 import { ADMIN_EMAILS } from '../lib/adminConfig';
+import type { IdentityType } from '../types';
+
+/** 注册时提交的身份信息 */
+export interface SignUpIdentity {
+  type: IdentityType;
+  subtype?: string | null;
+}
 
 /** 鉴权操作结果 */
 interface AuthResult {
@@ -48,13 +55,20 @@ interface AuthContextValue {
   isAgent: boolean;
   /** 全局寻址入口：客服→chat_guest_id，登录→guest_id，游客→localStorage */
   getMyGuestId: () => string | null;
-  signUp: (email: string, password: string, nickname: string) => Promise<AuthResult>;
+  signUp: (
+    email: string,
+    password: string,
+    nickname: string,
+    identity?: SignUpIdentity
+  ) => Promise<AuthResult>;
   signInPassword: (email: string, password: string) => Promise<AuthResult>;
   signInOtp: (email: string) => Promise<AuthResult>;
   verifyOtp: (email: string, token: string) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   updateNickname: (name: string) => Promise<void>;
+  /** 重新拉取当前用户 profile（余额变动后用于刷新导航栏余额） */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -78,7 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, guest_id, nickname, chat_guest_id, role, created_at')
+        .select(
+          'id, guest_id, nickname, chat_guest_id, role, created_at, ' +
+            'identity_type, identity_subtype, user_code, yang_de, points'
+        )
         .eq('id', currentUser.id)
         .single();
       if (error) {
@@ -86,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
-      const row = data as ProfileRow;
+      const row = data as unknown as ProfileRow;
       setProfile(row);
 
       // 绑定老游客历史：把 localStorage 的 guest_id 写回 profile（认领历史行）
@@ -169,12 +186,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profile]);
 
   const signUp = useCallback(
-    async (email: string, password: string, nickname: string): Promise<AuthResult> => {
+    async (
+      email: string,
+      password: string,
+      nickname: string,
+      identity?: SignUpIdentity
+    ): Promise<AuthResult> => {
       if (!isSupabaseConfigured) return { error: '服务暂未配置，无法注册' };
+      const metaData: Record<string, unknown> = { nickname };
+      if (identity) {
+        metaData.identity_type = identity.type;
+        metaData.identity_subtype = identity.subtype ?? null;
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { nickname } },
+        options: { data: metaData },
       });
       if (error) return { error: mapAuthError(error) };
       return {};
@@ -253,6 +280,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile]
   );
 
+  /** 重新拉取当前用户 profile（余额变动后刷新导航栏余额等） */
+  const refreshProfile = useCallback(async () => {
+    if (user) await loadProfile(user);
+  }, [user, loadProfile]);
+
   const value: AuthContextValue = {
     session,
     user,
@@ -269,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     signOut,
     updateNickname,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

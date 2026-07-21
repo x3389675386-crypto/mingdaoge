@@ -5,6 +5,8 @@
 
 import { getGuest } from './guestIdentity';
 
+import type { IdentityType } from '../types';
+
 /** profiles 表行结构（前端镜像） */
 export interface ProfileRow {
   /** 对应 auth.users.id */
@@ -19,6 +21,16 @@ export interface ProfileRow {
   role: 'user' | 'admin' | 'agent';
   /** 创建时间 */
   created_at: string;
+  /** 身份大类：顾客 / 散修 / 法脉 */
+  identity_type: IdentityType;
+  /** 身份二级细分 key（散修 / 法脉细分，顾客为 'customer'） */
+  identity_subtype: string | null;
+  /** 私聊 ID（MDG-XXXXX），仅 DB 生成，前端只读 */
+  user_code: string | null;
+  /** 阳德余额 */
+  yang_de: number;
+  /** 积分余额 */
+  points: number;
 }
 
 /**

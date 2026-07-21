@@ -1,50 +1,125 @@
-%% 明道阁 Auth · 时序图（注册/登录 + 游客↔登录态切换）
-
-%% ===== 1. 注册 / 登录（邮箱密码 + OTP）=====
+%% ============ 流程一：注册选身份（P0-1 / P0-2）============
 sequenceDiagram
-    actor U as 用户
-    participant P as 登录/注册页
-    participant A as AuthContext
-    participant S as Supabase Auth
-    participant DB as auth.users + profiles(触发器)
-    participant LS as localStorage
+    participant U as 用户
+    participant R as Register 页
+    participant I as IdentitySelector
+    participant A as AuthContext.signUp
+    participant SB as Supabase Auth
+    participant TRG as handle_new_user 触发器
+    participant GEN as generate_user_code()
+    participant P as profiles 表
 
-    U->>P: 填写邮箱/密码/昵称
-    P->>A: signUp(email, password, nickname)
-    A->>S: auth.signUp({email, password, data:{nickname}})
-    S->>DB: INSERT auth.users(raw_user_meta_data.nickname)
-    DB-->>DB: 触发器 handle_new_user → INSERT profiles(id, guest_id随机, nickname)
-    S-->>A: 返回 user/session
-    A->>LS: 读取已有 guest_id（老游客）
-    A->>DB: upsert profiles.guest_id = LS.guest_id（绑定历史）
-    A->>LS: 回写 guest_id 兼容降级
-    A-->>P: 注册成功
+    U->>R: 填写邮箱 / 密码 / 昵称
+    R->>I: 渲染身份选择卡（顾客/散修/法脉 + 二级细分）
+    U->>I: 选 identity_type + identity_subtype
+    I-->>R: 回传身份选择
+    U->>R: 点击「注册」
+    R->>A: signUp(email, pwd, nickname, {identity_type, identity_subtype})
+    A->>SB: auth.signUp(options.data = {nickname, identity_type, identity_subtype})
+    SB->>TRG: 新用户 INSERT 触发
+    TRG->>GEN: 生成唯一 user_code = 'MDG-' + 5位大写字母数字
+    GEN-->>TRG: 唯一 user_code（循环直至不冲突）
+    TRG->>P: INSERT(guest_id, nickname, role='user', identity_type, identity_subtype, user_code)
+    SB-->>A: 注册成功
+    A-->>R: 成功提示
+    R->>R: 跳转首页（AuthProvider 自动 loadProfile 读新字段）
 
-    Note over U,A: 邮箱 OTP 登录（P0-3）
-    U->>P: 输入邮箱 →「发送验证码/魔法链接」
-    P->>A: signInOtp(email)
-    A->>S: auth.signInWithOtp({email, emailRedirectTo:/verify-email})
-    S-->>U: 发送邮件（链接或 6 位码）
-    U->>P: 点击链接 或 输入验证码
-    P->>A: verifyOtp(email, token)  「链接由 onAuthStateChange 自动接管」
-    A->>S: auth.verifyOtp(...)
-    S-->>A: session
-    A->>DB: 载入 profile（绑定老 guest_id）
-    A-->>P: 登录成功
+%% ============ 流程二：点赞每人仅一次（P0-6）============
+sequenceDiagram
+    participant U as 用户（已登录）
+    participant FP as ForumPage
+    participant FC as ForumContext.likePost
+    participant SB as Supabase
+    participant L as forum_post_likes
+    participant PO as forum_posts
 
-%% ===== 2. 游客 ↔ 登录态 切换 / 身份解析流程 =====
-flowchart TD
-    START[获取「我的身份」] --> AUTH{已登录?}
-    AUTH -- 否（游客） --> GUEST[getMyGuestId = localStorage.guest_id]
-    AUTH -- 是 --> CHAT{profile.chat_guest_id 非空?}
-    CHAT -- 是（客服） --> AGENT[getMyGuestId = 'admin']
-    CHAT -- 否（普通用户） --> USER[getMyGuestId = profile.guest_id]
+    U->>FP: 点击点赞
+    FP->>FC: likePost(postId)
+    FC->>SB: SELECT 1 FROM forum_post_likes WHERE post_id & user_id=auth.uid()
+    alt 已点赞
+        SB-->>FC: 记录存在
+        FC-->>FP: 按钮置为「已赞」并禁用
+    else 未点赞
+        FC->>SB: rpc add_like(post_id)  [SECURITY DEFINER]
+        SB->>L: INSERT(post_id, user_id) ON CONFLICT DO NOTHING
+        alt 插入成功
+            SB->>PO: UPDATE forum_posts SET likes = likes + 1
+        end
+        SB-->>FC: 返回最新 likes 计数
+        FC-->>FP: 更新点赞数显示
+    end
+    Note over U,PO: 游客态（未登录）沿用本地 +1，不落库（维持既有行为）
 
-    GUEST --> G1[游客态：可浏览/发帖/私聊]
-    G1 --> G2[私聊走 RPC get_my_chat_messages(localStorage.guest_id)]
-    AGENT --> A1[客服态：对外显示「明道阁客服」]
-    A1 --> A2[getConversationId('admin', peer) 兼容历史 admin 会话]
-    A2 --> A3[私聊走 RPC get_all_chat_messages（is_admin 守卫）]
-    USER --> U1[登录态：profile.guest_id = 老 guest_id]
-    U1 --> U2[历史 forum/chat 行经 RLS 认主，可见/可编辑]
-    U2 --> U3[私聊走 RPC get_my_chat_messages(profile.guest_id)]
+%% ============ 流程三：兑换 / 阳德提现（P0-10 / 决策4）============
+sequenceDiagram
+    participant U as 用户
+    participant EP as ExchangePage
+    participant EC as ExchangeContext
+    participant SB as Supabase
+    participant RPC as redeem_item / create_cashout_order
+    participant P as profiles
+    participant OL as exchange_orders
+    participant RL as reward_ledger
+
+    Note over U,RL: 兑换实物 / 法器 / 清修卡
+    U->>EP: 选兑换项 → 确认
+    EP->>EC: redeem(itemId)
+    EC->>SB: rpc redeem_item(item_id)
+    SB->>RPC: 校验 auth.uid() = 订单用户, 读取 item 价格
+    RPC->>P: 校验余额 >= cost_amount
+    RPC->>P: UPDATE yang_de/points -= amount
+    RPC->>RL: INSERT 流水(-amount, balance_after, reason)
+    RPC->>OL: INSERT order(kind='redeem', status='fulfilled')
+    RPC-->>EC: 成功
+    EC-->>EP: 刷新余额 + 订单列表
+
+    Note over U,RL: 阳德提现（现金，≥1000 且为整千）
+    U->>EP: 输入金额 → 申请提现
+    EP->>EC: requestCashout(amount)
+    EC->>SB: rpc create_cashout_order(amount)
+    SB->>RPC: 校验 amount%1000=0 且 amount <= 我的阳德
+    RPC->>P: UPDATE yang_de -= amount  （提交即锁定）
+    RPC->>RL: INSERT 流水(-amount, '阳德提现申请')
+    RPC->>OL: INSERT order(kind='cashout', status='pending')
+    RPC-->>EC: order_id
+    EC-->>EP: 提示「已提交，待管理员审核」
+
+%% ============ 流程四：管理员手动加减阳德/积分（P0-11）============
+sequenceDiagram
+    participant A as 管理员
+    participant RP as RewardPanel
+    participant SB as Supabase
+    participant RPC as admin_adjust_reward
+    participant P as profiles
+    participant RL as reward_ledger
+
+    A->>RP: 输入 user_code 搜索 → 定位用户
+    A->>RP: 输入 +/- 阳德（或积分）+ 原因
+    RP->>SB: rpc admin_adjust_reward(user_id, kind, delta, reason)
+    SB->>RPC: guard is_admin()
+    RPC->>P: UPDATE yang_de/points += delta
+    RPC->>RL: INSERT 流水(delta, balance_after, operator_id)
+    RPC-->>RP: 成功
+    RP-->>A: 提示 + 流水列表刷新
+
+%% ============ 流程五：按 ID 添加私聊（P0-9）============
+sequenceDiagram
+    participant U as 用户
+    participant CV as ChatView（新建会话）
+    participant CR as resolve_guest_by_code (RPC)
+    participant P as profiles
+    participant CC as ChatContext.openConversation
+    participant SB as Supabase
+
+    U->>CV: 输入 user_code 或 guest_id
+    CV->>CR: rpc resolve_guest_by_code(input)
+    CR->>P: SELECT COALESCE(chat_guest_id, guest_id), nickname WHERE user_code = upper(input) OR guest_id = input
+    P-->>CR: {guest_id, nickname} 或 空
+    alt 找到
+        CR-->>CV: peer {guest_id, nickname}
+        CV->>CC: openConversation(peer.guest_id, peer.nickname)
+        CC->>SB: 打开/创建会话（conversation_id = sort(myId, peerId)）
+    else 未找到
+        CR-->>CV: 空
+        CV-->>U: 「未找到该用户，请检查 ID」
+    end

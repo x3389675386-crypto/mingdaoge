@@ -28,9 +28,11 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import MoodIcon from '@mui/icons-material/Mood';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useChat } from '../context/ChatContext';
+import { useAuth } from '../context/AuthContext';
 import { ADMIN_GUEST_ID, ADMIN_NAME, avatarColor } from '../lib/chatConstants';
 import { guestIdSuffix } from '../lib/guestIdentity';
 import { uploadChatImage } from '../lib/chatImage';
+import { resolveById } from '../lib/chatResolve';
 import type { ChatMessage } from '../types';
 
 /** 私聊快捷表情 */
@@ -65,6 +67,7 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
     setNickname,
     getPeer,
   } = useChat();
+  const { profile } = useAuth();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -160,19 +163,32 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleNewConversation = async () => {
     const target = newTarget.trim();
     if (!target) {
-      setNewError('请输入对方 guest_id');
+      setNewError('请输入对方 user_code（MDG-XXXXX）或 guest_id');
       return;
     }
+    // 客服快捷入口兜底（管理员固定身份）
     const isAdminTarget = target === ADMIN_GUEST_ID || target.toLowerCase() === 'admin';
-    const peerId = isAdminTarget ? ADMIN_GUEST_ID : target;
-    const peerName = isAdminTarget ? ADMIN_NAME : `道友#${guestIdSuffix(peerId)}`;
+    if (isAdminTarget) {
+      setNewOpen(false);
+      setNewTarget('');
+      setNewError('');
+      openConversation(ADMIN_GUEST_ID, ADMIN_NAME);
+      if (isMobile) setMobileShowList(false);
+      return;
+    }
+    // 按 ID 解析（兼容 user_code MDG-XXXXX 与旧 guest_id）
+    const peer = await resolveById(target);
+    if (!peer) {
+      setNewError('未找到该 ID 对应的用户，请确认后重试');
+      return;
+    }
     setNewOpen(false);
     setNewTarget('');
     setNewError('');
-    openConversation(peerId, peerName);
+    openConversation(peer.guest_id, peer.nickname);
     if (isMobile) setMobileShowList(false);
   };
 
@@ -201,9 +217,14 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
   };
 
   const handleCopyId = () => {
-    if (myId) {
-      navigator.clipboard?.writeText(myId).catch(() => {});
-      setSnackbar({ open: true, message: '我的 guest_id 已复制', severity: 'success' });
+    const copyTarget = profile?.user_code || myId;
+    if (copyTarget) {
+      navigator.clipboard?.writeText(copyTarget).catch(() => {});
+      setSnackbar({
+        open: true,
+        message: profile?.user_code ? '我的 ID（MDG）已复制' : '我的 guest_id 已复制',
+        severity: 'success',
+      });
     }
     setMenuAnchor(null);
   };
@@ -577,7 +598,7 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
           <EditIcon fontSize="small" sx={{ mr: 1, color: '#c9a96e' }} /> 修改昵称
         </MenuItem>
         <MenuItem onClick={handleCopyId}>
-          <ContentCopyIcon fontSize="small" sx={{ mr: 1, color: '#c9a96e' }} /> 复制我的 guest_id
+          <ContentCopyIcon fontSize="small" sx={{ mr: 1, color: '#c9a96e' }} /> 复制我的 ID
         </MenuItem>
       </Menu>
 
@@ -588,12 +609,12 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
         <DialogTitle sx={{ fontFamily: 'var(--font-serif)', color: '#c9a96e' }}>新建会话</DialogTitle>
         <DialogContent>
           <Typography sx={{ color: 'rgba(245,240,235,0.5)', fontSize: '0.8rem', mb: 2, fontFamily: 'var(--font-serif)' }}>
-            输入对方的 guest_id 即可发起私聊（可在对方分享的链接/资料中获取）。
+            输入对方的 ID 即可发起私聊：可填 user_code（MDG-XXXXX）或 guest_id（可在对方分享的资料中获取）。
           </Typography>
           <TextField
             fullWidth
-            label="对方 guest_id"
-            placeholder="例如 1b9d4c2a-..."
+            label="对方 ID（MDG-XXXXX 或 guest_id）"
+            placeholder="例如 MDG-A1B2C 或 1b9d4c2a-..."
             value={newTarget}
             onChange={(e) => { setNewTarget(e.target.value); setNewError(''); }}
             error={!!newError}
@@ -613,7 +634,7 @@ export default function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setNewOpen(false)} sx={{ color: 'rgba(245,240,235,0.5)', fontFamily: 'var(--font-serif)' }}>取消</Button>
-          <Button onClick={handleNewConversation} variant="contained"
+          <Button onClick={() => void handleNewConversation()} variant="contained"
             sx={{ backgroundColor: 'rgba(201,169,110,0.85)', color: '#1a1a2e', fontFamily: 'var(--font-serif)', '&:hover': { backgroundColor: '#c9a96e' } }}
           >
             开始

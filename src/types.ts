@@ -149,19 +149,120 @@ export interface ForumPost {
   imageUrl?: string;
   /** 点赞数 */
   likes?: number;
+  /** 当前用户是否已点赞（前端维护，后端以 forum_post_likes 为准） */
+  isLiked?: boolean;
   /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
   guest_id?: string;
 }
 
-/** 论坛分类 */
+/**
+ * 论坛分类（前端硬编码兜底，已废弃）。
+ * @deprecated 一期起分类改为从 forum_categories 表动态加载（见 ForumCategoryDB）。
+ * 仅在前端未连 Supabase 或动态分类加载失败时作降级兜底使用。
+ */
 export const FORUM_CATEGORIES = [
   { value: 'paranormal', label: '灵异事件大全', icon: '👻' },
   { value: 'handcraft', label: '手串手作', icon: '📿' },
   { value: 'culture', label: '国风文化', icon: '🏯' },
   { value: 'chat', label: '闲聊灌水', icon: '💬' },
+  { value: 'gongfa', label: '功法', icon: '📜' },
 ] as const;
 
 export type ForumCategory = typeof FORUM_CATEGORIES[number]['value'];
+
+// =================== 一期新增类型（身份 / 双账户 / 兑换 / 论坛功法）===================
+
+/** 身份大类 */
+export type IdentityType = 'customer' | 'sanxiu' | 'famai';
+
+/** 费用 / 余额种类 */
+export type CostKind = 'yang_de' | 'points';
+
+/** 兑换项类型 */
+export type ItemType = 'bracelet' | 'cash' | 'magic_tool' | 'retreat_card';
+
+/** 兑换 / 提现订单状态 */
+export type OrderStatus = 'pending' | 'approved' | 'rejected' | 'fulfilled';
+
+/** 论坛分类（DB 行，动态加载，替代硬编码 FORUM_CATEGORIES） */
+export interface ForumCategoryDB {
+  id: number;
+  value: string;
+  label: string;
+  icon: string | null;
+  sort_order: number;
+  is_system: boolean;
+}
+
+/** 功法电子书 */
+export interface GongfaMaterial {
+  id: number;
+  post_id: number;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  uploaded_by: string | null;
+  created_at?: string;
+}
+
+/** 兑换项（admin CRUD） */
+export interface ExchangeItem {
+  id: number;
+  title: string;
+  description: string | null;
+  cost_kind: CostKind;
+  cost_amount: number;
+  stock: number | null;
+  item_type: ItemType;
+  status: 'active' | 'inactive';
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** 兑换 / 提现订单 */
+export interface ExchangeOrder {
+  id: number;
+  user_id: string;
+  item_id: number | null;
+  kind: 'redeem' | 'cashout';
+  cost_kind: CostKind;
+  amount: number;
+  status: OrderStatus;
+  note: string | null;
+  operator_id: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+/** 余额变动流水（所有阳德 / 积分变动均经此表） */
+export interface RewardLedger {
+  id: number;
+  user_id: string;
+  kind: CostKind;
+  delta: number;
+  balance_after: number;
+  reason: string | null;
+  operator_id: string | null;
+  created_at: string;
+}
+
+/** 身份细分种子（user_identities 镜像，前端 src/lib/identities.ts 保持一致） */
+export interface UserIdentity {
+  id: number;
+  type: IdentityType;
+  key: string;
+  label: string;
+  description: string | null;
+  sort_order: number;
+}
+
+/** 论坛点赞记录 */
+export interface ForumPostLike {
+  post_id: number;
+  user_id: string;
+  created_at?: string;
+}
 
 /** 私聊消息接口（对应 chat_messages 表） */
 export interface ChatMessage {
