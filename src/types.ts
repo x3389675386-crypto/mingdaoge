@@ -103,34 +103,6 @@ export type MessageAction =
   | { type: 'MARK_UNREAD'; payload: number }
   | { type: 'DELETE_MESSAGE'; payload: number };
 
-/** 晒图/评价接口 */
-export interface Review {
-  /** 晒图唯一ID */
-  id: number;
-  /** 昵称 */
-  nickname: string;
-  /** 评论内容 */
-  content: string;
-  /** 晒图 base64 */
-  imageUrl?: string;
-  /** 关联产品ID */
-  productId?: number;
-  /** 创建时间 ISO 字符串 */
-  createdAt: string;
-  /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
-  guest_id?: string;
-}
-
-/** 晒图状态接口 */
-export interface ReviewState {
-  reviews: Review[];
-}
-
-/** 晒图动作类型 */
-export type ReviewAction =
-  | { type: 'ADD_REVIEW'; payload: Review }
-  | { type: 'DELETE_REVIEW'; payload: number };
-
 /** 论坛帖子接口 */
 export interface ForumPost {
   /** 帖子唯一ID */

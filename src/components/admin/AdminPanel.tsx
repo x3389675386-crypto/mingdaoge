@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import AdminRoute from './AdminRoute';
 import ProductTable from './ProductTable';
 import MessagePanel from './MessagePanel';
-import ReviewPanel from './ReviewPanel';
 import BuyGuideAdmin from './BuyGuideAdmin';
 import ChatView from '../ChatView';
 import ExchangeItemPanel from './ExchangeItemPanel';
@@ -140,7 +139,6 @@ function AdminPanelInner() {
             </span>
           }
         />
-        <Tab label="晒图管理" />
         <Tab label="购买引导图" />
         <Tab label="兑换项" />
         <Tab
@@ -209,27 +207,24 @@ function AdminPanelInner() {
         <MessagePanel />
       </TabPanel>
       <TabPanel value={tabValue} index={2}>
-        <ReviewPanel />
-      </TabPanel>
-      <TabPanel value={tabValue} index={3}>
         <BuyGuideAdmin />
       </TabPanel>
-      <TabPanel value={tabValue} index={4}>
+      <TabPanel value={tabValue} index={3}>
         <ExchangeItemPanel />
       </TabPanel>
-      <TabPanel value={tabValue} index={5}>
+      <TabPanel value={tabValue} index={4}>
         <CashoutPanel />
       </TabPanel>
-      <TabPanel value={tabValue} index={6}>
+      <TabPanel value={tabValue} index={5}>
         <RewardPanel />
       </TabPanel>
-      <TabPanel value={tabValue} index={7}>
+      <TabPanel value={tabValue} index={6}>
         <GongfaPanel />
       </TabPanel>
-      <TabPanel value={tabValue} index={8}>
+      <TabPanel value={tabValue} index={7}>
         <CategoryPanel />
       </TabPanel>
-      <TabPanel value={tabValue} index={9}>
+      <TabPanel value={tabValue} index={8}>
         <AdminChatTab />
       </TabPanel>
 
@@ -242,7 +237,7 @@ function AdminPanelInner() {
             fontSize: '0.75rem',
           }}
         >
-          产品 / 留言 / 晒图仍为本地存储；论坛、身份、兑换、提现、奖励均存于云端数据库
+          产品 / 留言仍为本地存储；论坛、身份、兑换、提现、奖励均存于云端数据库
         </Typography>
       </Box>
     </div>

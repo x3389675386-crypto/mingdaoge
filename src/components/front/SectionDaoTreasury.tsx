@@ -29,7 +29,7 @@ export default function SectionDaoTreasury() {
 
   return (
     <Box sx={{ background: 'linear-gradient(180deg, rgba(22,33,62,0.4) 0%, rgba(26,26,46,0.2) 100%)' }}>
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 6, md: 9 } }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 12, md: 16 } }}>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: { xs: '1.8rem', md: '2.4rem' }, color: '#c9a96e' }}>
             道藏阁

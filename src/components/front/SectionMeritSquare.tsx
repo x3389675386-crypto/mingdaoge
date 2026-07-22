@@ -17,7 +17,7 @@ export default function SectionMeritSquare() {
   const points = profile?.points ?? 0;
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 6, md: 9 } }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 12, md: 16 } }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: { xs: '1.8rem', md: '2.4rem' }, color: '#c9a96e' }}>
           积德坊

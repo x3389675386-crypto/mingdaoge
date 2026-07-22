@@ -54,7 +54,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
   }, [category, activeProducts, search, sort]);
 
   return (
-    <section id="products" className="py-20 px-4 md:px-8 max-w-7xl mx-auto">
+    <section id="products" className="py-12 px-4 md:px-8 max-w-[1200px] mx-auto">
       {/* 标题 */}
       <div className="text-center mb-12">
         <Typography

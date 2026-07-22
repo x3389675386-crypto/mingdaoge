@@ -61,7 +61,7 @@ export default function Register() {
       return;
     }
     setInfo(
-      '注册成功！若开启邮箱验证，请查收验证邮件并登录。登录后系统将为您生成专属 ID（MDG-开头），可在导航栏查看。'
+      '注册成功！系统将自动为您生成专属修行 ID（MDG-xxxxx），可在导航栏查看。若开启邮箱验证，请查收验证邮件并登录。'
     );
     setTimeout(() => navigate('/'), 2200);
   };

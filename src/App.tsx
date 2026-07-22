@@ -4,32 +4,33 @@ import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box } from '
 import { CartProvider, useCart } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
 import { MessageProvider } from './context/MessageContext';
-import { ReviewProvider } from './context/ReviewContext';
 import { ForumProvider } from './context/ForumContext';
 import { CommentProvider } from './context/CommentContext';
 import { ChatProvider } from './context/ChatContext';
 import { ExchangeProvider } from './context/ExchangeContext';
 import Navbar from './components/Navbar';
+import AnnouncementBar from './components/AnnouncementBar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
 import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import About from './components/About';
-import ReviewSection from './components/ReviewSection';
-import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
-import AdminPanel from './components/admin/AdminPanel';
-import ChatPage from './components/ChatPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import SectionDaoTreasury from './components/front/SectionDaoTreasury';
 import SectionMeritSquare from './components/front/SectionMeritSquare';
+import type { Product } from './types';
+
+/** 轻量首屏组件（导航 / 首页区块）静态引入，重路由组件走 lazy 拆包 */
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const ExchangePage = lazy(() => import('./pages/ExchangePage'));
 const Profile = lazy(() => import('./pages/Profile'));
-import type { Product } from './types';
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel'));
+const ForumPage = lazy(() => import('./components/ForumPage'));
+const ChatPage = lazy(() => import('./components/ChatPage'));
 
 /** MUI 深色主题定制 */
 const darkTheme = createTheme({
@@ -67,6 +68,7 @@ function FrontPage() {
   return (
     <>
       <Navbar />
+      <AnnouncementBar />
       <Cart />
 
       <main>
@@ -74,7 +76,6 @@ function FrontPage() {
         <Box id="products">
           <ProductGrid onDetail={handleDetail} onAddToCart={addToCart} />
         </Box>
-        <ReviewSection />
         <SectionDaoTreasury />
         <SectionMeritSquare />
         <About />
@@ -98,13 +99,12 @@ export default function App() {
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <ProductProvider>
-        <ReviewProvider>
-          <MessageProvider>
-            <ForumProvider>
-              <CommentProvider>
-                <CartProvider>
-                  <ChatProvider>
-                    <ExchangeProvider>
+        <MessageProvider>
+          <ForumProvider>
+            <CommentProvider>
+              <CartProvider>
+                <ChatProvider>
+                  <ExchangeProvider>
                     <ErrorBoundary title="页面出错了">
                       <Suspense
                         fallback={
@@ -114,26 +114,25 @@ export default function App() {
                         }
                       >
                         <Routes>
-                        <Route path="/" element={<FrontPage />} />
-                        <Route path="/forum" element={<ForumPage />} />
-                        <Route path="/chat" element={<ChatPage />} />
-                        <Route path="/admin" element={<AdminPanel />} />
-                        <Route path="/exchange" element={<ExchangePage />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/verify-email" element={<VerifyEmail />} />
-                      </Routes>
+                          <Route path="/" element={<FrontPage />} />
+                          <Route path="/forum" element={<ForumPage />} />
+                          <Route path="/chat" element={<ChatPage />} />
+                          <Route path="/admin" element={<AdminPanel />} />
+                          <Route path="/exchange" element={<ExchangePage />} />
+                          <Route path="/profile" element={<Profile />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route path="/forgot-password" element={<ForgotPassword />} />
+                          <Route path="/verify-email" element={<VerifyEmail />} />
+                        </Routes>
                       </Suspense>
                     </ErrorBoundary>
-                    </ExchangeProvider>
-                  </ChatProvider>
-                </CartProvider>
-              </CommentProvider>
-            </ForumProvider>
-          </MessageProvider>
-        </ReviewProvider>
+                  </ExchangeProvider>
+                </ChatProvider>
+              </CartProvider>
+            </CommentProvider>
+          </ForumProvider>
+        </MessageProvider>
       </ProductProvider>
     </ThemeProvider>
   );

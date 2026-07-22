@@ -3,7 +3,7 @@ import { GoldDivider, CloudPattern, GreekKeyBorder } from './ChinesePattern';
 
 export default function About() {
   return (
-    <section id="about" className="relative py-24 px-4 md:px-8 overflow-hidden">
+    <section id="about" className="relative py-12 px-4 md:px-8 overflow-hidden">
       {/* 背景装饰 */}
       <CloudPattern className="absolute top-8 right-8 opacity-20 scale-75" />
       <CloudPattern className="absolute bottom-16 left-4 opacity-15 scale-50" />
