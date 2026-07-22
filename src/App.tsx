@@ -20,7 +20,7 @@ import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import AdminPanel from './components/admin/AdminPanel';
 import ChatPage from './components/ChatPage';
-import SectionStringCollection from './components/front/SectionStringCollection';
+import ErrorBoundary from './components/ErrorBoundary';
 import SectionDaoTreasury from './components/front/SectionDaoTreasury';
 import SectionMeritSquare from './components/front/SectionMeritSquare';
 const Login = lazy(() => import('./pages/Login'));
@@ -71,7 +71,6 @@ function FrontPage() {
 
       <main>
         <Hero />
-        <SectionStringCollection onDetail={handleDetail} onAddToCart={addToCart} onBuy={addToCart} />
         <Box id="products">
           <ProductGrid onDetail={handleDetail} onAddToCart={addToCart} />
         </Box>
@@ -106,26 +105,28 @@ export default function App() {
                 <CartProvider>
                   <ChatProvider>
                     <ExchangeProvider>
-                    <Suspense
-                      fallback={
-                        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>
-                          <CircularProgress sx={{ color: '#c9a96e' }} />
-                        </Box>
-                      }
-                    >
-                      <Routes>
-                      <Route path="/" element={<FrontPage />} />
-                      <Route path="/forum" element={<ForumPage />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/admin" element={<AdminPanel />} />
-                      <Route path="/exchange" element={<ExchangePage />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/verify-email" element={<VerifyEmail />} />
-                    </Routes>
-                    </Suspense>
+                    <ErrorBoundary title="页面出错了">
+                      <Suspense
+                        fallback={
+                          <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>
+                            <CircularProgress sx={{ color: '#c9a96e' }} />
+                          </Box>
+                        }
+                      >
+                        <Routes>
+                        <Route path="/" element={<FrontPage />} />
+                        <Route path="/forum" element={<ForumPage />} />
+                        <Route path="/chat" element={<ChatPage />} />
+                        <Route path="/admin" element={<AdminPanel />} />
+                        <Route path="/exchange" element={<ExchangePage />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                      </Routes>
+                      </Suspense>
+                    </ErrorBoundary>
                     </ExchangeProvider>
                   </ChatProvider>
                 </CartProvider>

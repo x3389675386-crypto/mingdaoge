@@ -188,8 +188,8 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
-            {/* 已登录用户：身份 + 余额 + 退出 */}
-            {isAuthenticated && profile && (
+            {/* 已登录用户：身份 + 余额 + 退出（移动端已在右侧抽屉中完整呈现，顶部仅桌面端显示以免溢出） */}
+            {isAuthenticated && profile && !isMobile && (
               <Box className="flex items-center gap-2 ml-1">
                 <Box className="flex flex-col items-end leading-tight">
                   <Box className="flex items-center gap-1.5">

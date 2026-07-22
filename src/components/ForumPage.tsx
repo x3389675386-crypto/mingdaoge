@@ -352,7 +352,7 @@ export default function ForumPage() {
                       {post.content}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1.5, flexWrap: 'wrap', rowGap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PersonIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.4)' }} />
                         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.5)', fontSize: '0.8rem' }}>{post.author}</Typography>

@@ -77,6 +77,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** 已尝试过绑定老 guest_id 的账号集合（模块级，避免重复 update 触发 409 刷屏） */
+const boundUserIds = new Set<string>();
+
 /** AuthProvider 组件 */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -113,15 +116,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 绑定老游客历史：把 localStorage 的 guest_id 写回 profile（认领历史行）
       const local = getGuest();
       if (local && local.guest_id) {
-        const { error: upsertError } = await supabase
-          .from('profiles')
-          .update({ guest_id: local.guest_id, nickname: local.nickname || row.nickname || '' })
-          .eq('id', currentUser.id);
-        if (!upsertError) {
-          setProfile((prev) => (prev ? { ...prev, guest_id: local.guest_id } : prev));
-        } else {
-          console.warn('[明道阁] 绑定老 guest_id 冲突（可能已被其它账号占用），保留服务端身份');
+        if (!row.guest_id && !boundUserIds.has(currentUser.id)) {
+          // 仅在服务端尚无 guest_id 且本账号尚未尝试过绑定时才认领，避免反复 update 触发 409
+          boundUserIds.add(currentUser.id);
+          const { error: upsertError } = await supabase
+            .from('profiles')
+            .update({ guest_id: local.guest_id, nickname: local.nickname || row.nickname || '' })
+            .eq('id', currentUser.id);
+          if (!upsertError) {
+            setProfile((prev) => (prev ? { ...prev, guest_id: local.guest_id } : prev));
+          } else {
+            // 已被其它账号占用：降级为 debug，避免 409 反复刷屏
+            console.debug('[明道阁] 绑定老 guest_id 跳过（可能已被其它账号占用），保留服务端身份');
+          }
+        } else if (row.guest_id && row.guest_id !== local.guest_id) {
+          // 服务端已存在不同 guest_id：以服务端为准，回写本地，避免下次再尝试覆盖
+          syncGuestId(row.guest_id, row.nickname);
         }
+        // 其余情况（row.guest_id 存在且与本地一致）：无需处理
       } else {
         // 无本地游客身份：把服务端 guest_id 写回 localStorage，便于退出后继续沿用
         syncGuestId(row.guest_id, row.nickname);

@@ -128,7 +128,7 @@ export default function ProductDetail({ product, open, onClose, onAddToCart }: P
             </Typography>
 
             {/* 产地 & 珠径 */}
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <Typography sx={{ fontSize: '0.8rem', color: 'rgba(201,169,110,0.6)', fontFamily: 'var(--font-serif)' }}>
                 产地：{product.origin}
               </Typography>

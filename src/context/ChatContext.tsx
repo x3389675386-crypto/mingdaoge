@@ -316,24 +316,38 @@ export function ChatProvider({ children, identityOverride }: ChatProviderProps) 
   /** 订阅 Realtime（仅 Supabase 配置且登录态时） */
   const subscribeRealtime = useCallback((): (() => void) => {
     if (!isSupabaseConfigured || !myId) return () => {};
-    // 通道名按身份区分，避免后台 admin 与前台共用同一通道导致 removeChannel 互相断开
-    const channel = supabase
-      .channel(`${CHAT_REALTIME_CHANNEL}_${myId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-        (payload: { new: Record<string, unknown> }) => {
-          const row = payload.new;
-          const sender = row.sender_id as string;
-          const receiver = row.receiver_id as string;
-          if (sender !== myId && receiver !== myId) return; // 应用层过滤：仅本人会话
-          const msg = mapRow(row);
-          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-        }
-      )
-      .subscribe();
+    // 每次生成唯一通道名，避免对相同 myId 复用一个「已订阅」通道，
+    // 否则再次 .on() 会抛 "cannot add postgres_changes callbacks ... after subscribe()" 并导致白屏。
+    const channelName = `${CHAT_REALTIME_CHANNEL}_${myId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+          (payload: { new: Record<string, unknown> }) => {
+            const row = payload.new;
+            const sender = row.sender_id as string;
+            const receiver = row.receiver_id as string;
+            if (sender !== myId && receiver !== myId) return; // 应用层过滤：仅本人会话
+            const msg = mapRow(row);
+            setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      // Realtime 订阅异常（如通道已订阅）属可恢复问题，绝不向上抛出以免白屏
+      console.debug('[明道阁] Realtime 订阅失败（已忽略，不影响页面）:', err);
+      return () => {};
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (!channel) return;
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        /* 移除失败忽略，避免影响页面 */
+      }
     };
   }, [myId]);
 
