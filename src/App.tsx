@@ -19,7 +19,6 @@ import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
 import SectionDaoTreasury from './components/front/SectionDaoTreasury';
 import SectionMeritSquare from './components/front/SectionMeritSquare';
-import CheckinCard from './components/CheckinCard';
 import BuyGuideDialog from './components/BuyGuideDialog';
 import type { Product } from './types';
 
@@ -74,9 +73,6 @@ function FrontPage() {
     <>
       <Navbar />
       <AnnouncementBar />
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, mt: 3 }}>
-        <CheckinCard compact />
-      </Box>
       <Cart />
 
       <main>

@@ -39,6 +39,7 @@ import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
 import PrivateChatButton from './PrivateChatButton';
 import PostGongfaDialog from './PostGongfaDialog';
+import { useSearchParams } from 'react-router-dom';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -52,11 +53,54 @@ const categoryColors: Record<string, string> = {
 /** 发帖快捷表情 */
 const QUICK_EMOJIS = ['👍', '😂', '🔥', '👏', '💡', '🍀', '🙏', '✨', '🌿', '📿', '💬', '🌟'];
 
+/** 道门典籍 · 固定功法教程（静态展示，纯前端，无需后端） */
+interface GongfaTutorial {
+  id: string;
+  title: string;
+  summary: string;
+  detail: string;
+}
+
+const FIXED_TUTORIALS: GongfaTutorial[] = [
+  {
+    id: 'xiaoliuren',
+    title: '小六壬教程',
+    summary: '中国传统占卜术之一，以月日时三宫起课，断吉凶祸福。从起课方法、六宫含义到实例解析，带你入门。',
+    detail:
+      '小六壬是中国民间流传已久的占卜术，以农历月、日、时三宫推算，落于六神（大安、留连、速喜、赤口、小吉、空亡）之一以断吉凶。本课从起课口诀、六宫基本含义、掌诀定位讲起，并辅以问事实例，帮助初学者快速上手，作为日常决疑的入门参考。',
+  },
+  {
+    id: 'meihuayishu',
+    title: '梅花易数教程',
+    summary: '相传为邵雍所创，以象数结合、随心起卦为特点。介绍起卦方法、体用生克、断卦思路。',
+    detail:
+      '梅花易数相传为北宋邵雍（邵康节）所创，强调“不动不占、不因事不占”，可凭数字、时间、声音、方位随心起卦。本课介绍起卦思路、体卦与用卦的区分、五行生克与比和，以及观象玩辞的断卦方法，适合想深入了解象数易学的同好。',
+  },
+  {
+    id: 'daodejing',
+    title: '道德经导读',
+    summary: '老子所著，道家经典。精选八十一章要义，结合修行生活，体味道法自然。',
+    detail:
+      '《道德经》为老子所著，仅五千余言而包罗万象，分道经与德经，共八十一章。本课精选核心章句，围绕“道可道非常道”“上善若水”“无为而无不为”等要义，结合日常修心与处世，引导读者体悟“道法自然”的从容境界。',
+  },
+  {
+    id: 'qingjingjing',
+    title: '清静经',
+    summary: '“人能常清静，天地悉皆归”。从静心法门入手，引导日常修持。',
+    detail:
+      '《清静经》全称《太上老君说常清静经》，是道教短小精要的心性修炼经典。开篇即言“人能常清静，天地悉皆归”，强调遣欲澄心、内观自在。本课从静心法门入手，拆解“清、静、常”的修持次第，便于在日常中落实。',
+  },
+];
+
 export default function ForumPage() {
   const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning } = useForum();
   const { commentsByPostId } = useComments();
   const { isAdmin, isAuthenticated, profile } = useAuth();
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchParams] = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string>(() => {
+    const cat = searchParams.get('cat');
+    return cat ? cat : 'all';
+  });
   const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [gongfaOpen, setGongfaOpen] = useState(false);
@@ -78,6 +122,19 @@ export default function ForumPage() {
     message: '',
     severity: 'success',
   });
+
+  /** 固定功法教程弹窗 */
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [activeTutorial, setActiveTutorial] = useState<GongfaTutorial | null>(null);
+
+  const openTutorial = (t: GongfaTutorial) => {
+    setActiveTutorial(t);
+    setTutorialOpen(true);
+  };
+  const closeTutorial = () => {
+    setTutorialOpen(false);
+    setTimeout(() => setActiveTutorial(null), 300);
+  };
 
   /** 动态分类（forum_categories）优先，未配置时降级硬编码 */
   const activeCategories = categories.length > 0
@@ -256,6 +313,82 @@ export default function ForumPage() {
             />
           ))}
         </Box>
+
+        {/* 道门典籍 · 固定功法教程 */}
+        {(activeCategory === 'all' || activeCategory === 'gongfa') && (
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontFamily: 'var(--font-calligraphy)', color: '#c9a96e', mb: 2, fontSize: { xs: '1.4rem', md: '1.8rem' } }}
+            >
+              道门典籍 · 固定功法教程
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
+                gap: 2,
+              }}
+            >
+              {FIXED_TUTORIALS.map((t) => (
+                <Card
+                  key={t.id}
+                  sx={{
+                    backgroundColor: 'rgba(22,33,62,0.4)',
+                    border: '1px solid rgba(201,169,110,0.1)',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    transition: 'all 0.3s',
+                    '&:hover': { borderColor: 'rgba(201,169,110,0.25)', backgroundColor: 'rgba(22,33,62,0.6)' },
+                  }}
+                >
+                  <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '1.05rem', fontWeight: 600, mb: 1 }}
+                    >
+                      {t.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: 'var(--font-serif)',
+                        color: 'rgba(245,240,235,0.6)',
+                        fontSize: '0.82rem',
+                        lineHeight: 1.7,
+                        mb: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {t.summary}
+                    </Typography>
+                    <Box sx={{ mt: 'auto' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => openTutorial(t)}
+                        sx={{
+                          borderColor: 'rgba(201,169,110,0.4)',
+                          color: '#c9a96e',
+                          fontFamily: 'var(--font-serif)',
+                          fontSize: '0.78rem',
+                          textTransform: 'none',
+                          '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
+                        }}
+                      >
+                        查看简介
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {/* 排序切换 */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
@@ -562,6 +695,27 @@ export default function ForumPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* 固定功法教程简介弹窗 */}
+      <Dialog
+        open={tutorialOpen}
+        onClose={closeTutorial}
+        maxWidth="sm"
+        fullWidth
+        sx={{ '& .MuiDialog-paper': { backgroundColor: '#16213e', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '4px' } }}
+      >
+        <DialogTitle sx={{ fontFamily: 'var(--font-serif)', color: '#c9a96e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 1 }}>
+          {activeTutorial?.title}
+          <IconButton onClick={closeTutorial} sx={{ color: 'rgba(245,240,235,0.5)' }} aria-label="关闭">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.75)', fontSize: '0.9rem', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>
+            {activeTutorial?.detail}
+          </Typography>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
 

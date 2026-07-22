@@ -7,6 +7,7 @@ import { Box, Typography, Button, Chip } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useNavigate } from 'react-router-dom';
+import CheckinCard from '../../components/CheckinCard';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SectionMeritSquare() {
@@ -49,24 +50,40 @@ export default function SectionMeritSquare() {
         />
       </Box>
 
-      <Box
-        sx={{
-          maxWidth: 640,
-          mx: 'auto',
-          mb: 3,
-          p: 1.5,
-          textAlign: 'center',
-          border: '1px dashed rgba(201,169,110,0.3)',
-          borderRadius: '4px',
-          backgroundColor: 'rgba(201,169,110,0.05)',
-        }}
-      >
-        <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.82rem' }}>
-          任务系统即将上线 —— 签到、发帖、结缘皆可得功德
+      {/* 任务大厅引导 */}
+      <Box sx={{ textAlign: 'center', maxWidth: 640, mx: 'auto', mb: 3 }}>
+        <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#c9a96e', fontSize: '0.95rem', fontWeight: 600, letterSpacing: '0.05em' }}>
+          任务大厅已开放 —— 认领修行任务、提交凭证，赚取阳德与积分
         </Typography>
       </Box>
 
-      <Box sx={{ textAlign: 'center' }}>
+      {/* 操作按钮（移动端自动换行） */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: { xs: 1.5, sm: 2 },
+          maxWidth: '100%',
+          mb: 1,
+        }}
+      >
+        <Button
+          onClick={() => navigate('/tasks')}
+          endIcon={<ArrowForwardIcon />}
+          sx={{
+            backgroundColor: 'rgba(201,169,110,0.85)',
+            color: '#1a1a2e',
+            fontFamily: 'var(--font-serif)',
+            letterSpacing: '0.1em',
+            borderRadius: '2px',
+            px: 3,
+            '&:hover': { backgroundColor: '#c9a96e' },
+          }}
+          variant="contained"
+        >
+          前往任务大厅
+        </Button>
         <Button
           onClick={() => navigate('/exchange')}
           endIcon={<ArrowForwardIcon />}
@@ -81,8 +98,13 @@ export default function SectionMeritSquare() {
           }}
           variant="contained"
         >
-          {isAuthenticated ? '前往兑换中心' : '登录后开启功德账户'}
+          前往兑换中心
         </Button>
+      </Box>
+
+      {/* 签到卡片（完整形态，显眼展示） */}
+      <Box sx={{ maxWidth: 480, mx: 'auto', mt: 3 }}>
+        <CheckinCard />
       </Box>
     </Box>
   );

@@ -1,11 +1,29 @@
-import { Button } from '@mui/material';
+import { Button, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { CloudPattern, GreekKeyBorder } from './ChinesePattern';
 
 export default function Hero() {
+  const navigate = useNavigate();
+
   const scrollToProducts = () => {
     const el = document.querySelector('#products');
     el?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  /** 三入口统一按钮样式（outlined + 主题金 #c8a45c） */
+  const ctaButtonSx = {
+    borderColor: 'rgba(200,164,92,0.6)',
+    color: '#c8a45c',
+    fontFamily: 'var(--font-serif)',
+    letterSpacing: '0.2em',
+    padding: { xs: '8px 20px', sm: '10px 36px' },
+    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+    borderRadius: '2px',
+    '&:hover': {
+      borderColor: '#c8a45c',
+      backgroundColor: 'rgba(200,164,92,0.08)',
+    },
+  } as const;
 
   return (
     <section
@@ -37,7 +55,7 @@ export default function Hero() {
       <div className="relative z-10 text-center px-4 animate-fade-in-up">
         {/* 副标题 */}
         <p className="text-gold/60 tracking-[0.4em] text-xs md:text-sm mb-4 uppercase">
-          新中式 · 手工定制
+          手串 · 道法 · 同修
         </p>
 
         {/* 主标题 */}
@@ -60,29 +78,29 @@ export default function Hero() {
           一念一珠 · 串起山河万象
         </p>
         <p className="text-jade-white/40 text-sm md:text-base mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-serif)' }}>
-          取材山野，手作匠心。以木石之韵，承千年文脉，为您串一抹东方清雅。
+          一串一世界，一法一修行。明道阁以手作珠串承东方之美，更以道法修行聚同道之人。
         </p>
 
-        {/* CTA 按钮 */}
-        <Button
-          onClick={scrollToProducts}
-          variant="outlined"
+        {/* CTA 三入口：品鉴手串 / 修行道法 / 任务集 */}
+        <Box
           sx={{
-            borderColor: 'rgba(201,169,110,0.4)',
-            color: '#c9a96e',
-            fontFamily: 'var(--font-serif)',
-            letterSpacing: '0.2em',
-            padding: '10px 40px',
-            fontSize: '0.9rem',
-            borderRadius: '2px',
-            '&:hover': {
-              borderColor: '#c9a96e',
-              backgroundColor: 'rgba(201,169,110,0.08)',
-            },
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: { xs: 1.5, sm: 2 },
+            px: { xs: 1, sm: 0 },
           }}
         >
-          品鉴手串
-        </Button>
+          <Button onClick={scrollToProducts} variant="outlined" sx={ctaButtonSx}>
+            品鉴手串
+          </Button>
+          <Button onClick={() => navigate('/forum?cat=gongfa')} variant="outlined" sx={ctaButtonSx}>
+            修行道法
+          </Button>
+          <Button onClick={() => navigate('/tasks')} variant="outlined" sx={ctaButtonSx}>
+            任务集
+          </Button>
+        </Box>
       </div>
 
       {/* 下方回字纹 */}
