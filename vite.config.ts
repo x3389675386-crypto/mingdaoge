@@ -8,4 +8,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) return 'supabase-vendor';
+            if (id.includes('@mui') || id.includes('@emotion')) return 'mui-vendor';
+            if (id.includes('react-router') || id.includes('@remix-run') || id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) return 'react-vendor';
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
 });

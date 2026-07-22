@@ -29,6 +29,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import CommentIcon from '@mui/icons-material/Comment';
 import ImageIcon from '@mui/icons-material/Image';
 import CloseIcon from '@mui/icons-material/Close';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useForum } from '../context/ForumContext';
 import { useComments } from '../context/CommentContext';
 import { FORUM_CATEGORIES, type ForumPost } from '../types';
@@ -39,7 +40,7 @@ import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
 import PrivateChatButton from './PrivateChatButton';
 import PostGongfaDialog from './PostGongfaDialog';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 /** 分类标签颜色 */
 const categoryColors: Record<string, string> = {
@@ -97,6 +98,7 @@ export default function ForumPage() {
   const { commentsByPostId } = useComments();
   const { isAdmin, isAuthenticated, profile } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string>(() => {
     const cat = searchParams.get('cat');
     return cat ? cat : 'all';
@@ -714,6 +716,22 @@ export default function ForumPage() {
           <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.75)', fontSize: '0.9rem', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>
             {activeTutorial?.detail}
           </Typography>
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => navigate(`/tutorials/${activeTutorial?.id}`)}
+              sx={{
+                backgroundColor: 'rgba(201,169,110,0.85)',
+                color: '#1a1a2e',
+                fontFamily: 'var(--font-serif)',
+                textTransform: 'none',
+                '&:hover': { backgroundColor: '#c9a96e' },
+              }}
+            >
+              开始学习 →
+            </Button>
+          </Box>
         </DialogContent>
       </Dialog>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import {
   ToggleButtonGroup,
   ToggleButton,
@@ -12,8 +12,10 @@ import { categoryLabels } from '../data/products';
 import { useProducts } from '../context/ProductContext';
 import { GoldDivider } from './ChinesePattern';
 import ProductCard from './ProductCard';
-import BuyGuideDialog from './BuyGuideDialog';
 import type { Product, Category } from '../types';
+
+/** 购买引导弹窗：按需加载，避免占用首屏 bundle */
+const BuyGuideDialog = lazy(() => import('./BuyGuideDialog'));
 
 /** 排序方式 */
 type SortMode = 'default' | 'price_asc' | 'price_desc';
@@ -196,7 +198,9 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
       )}
 
       {/* 购买引导弹窗 */}
-      <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
+      <Suspense fallback={null}>
+        <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
+      </Suspense>
     </section>
   );
 }

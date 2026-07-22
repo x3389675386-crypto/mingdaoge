@@ -12,14 +12,8 @@ import Navbar from './components/Navbar';
 import AnnouncementBar from './components/AnnouncementBar';
 import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
-import ProductDetail from './components/ProductDetail';
-import Cart from './components/Cart';
-import About from './components/About';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
-import SectionDaoTreasury from './components/front/SectionDaoTreasury';
-import SectionMeritSquare from './components/front/SectionMeritSquare';
-import BuyGuideDialog from './components/BuyGuideDialog';
 import type { Product } from './types';
 
 /** 轻量首屏组件（导航 / 首页区块）静态引入，重路由组件走 lazy 拆包 */
@@ -34,6 +28,24 @@ const ForumPage = lazy(() => import('./components/ForumPage'));
 const ChatPage = lazy(() => import('./components/ChatPage'));
 const TaskHall = lazy(() => import('./pages/TaskHall'));
 const MyTasks = lazy(() => import('./pages/MyTasks'));
+
+/** 首屏下方区块与交互弹窗：静态 import 改为 lazy，减小首屏 bundle */
+const SectionDaoTreasury = lazy(() => import('./components/front/SectionDaoTreasury'));
+const SectionMeritSquare = lazy(() => import('./components/front/SectionMeritSquare'));
+const About = lazy(() => import('./components/About'));
+const Cart = lazy(() => import('./components/Cart'));
+const ProductDetail = lazy(() => import('./components/ProductDetail'));
+const BuyGuideDialog = lazy(() => import('./components/BuyGuideDialog'));
+
+/** 教程完整内容页 */
+const Tutorial = lazy(() => import('./pages/Tutorial'));
+
+/** 首屏下方区块占位 */
+const sectionFallback = (
+  <Box sx={{ minHeight: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <CircularProgress sx={{ color: '#c9a96e' }} />
+  </Box>
+);
 
 /** MUI 深色主题定制 */
 const darkTheme = createTheme({
@@ -73,29 +85,42 @@ function FrontPage() {
     <>
       <Navbar />
       <AnnouncementBar />
-      <Cart />
+
+      <Suspense fallback={null}>
+        <Cart />
+      </Suspense>
 
       <main>
         <Hero />
         <Box id="products">
           <ProductGrid onDetail={handleDetail} onAddToCart={addToCart} />
         </Box>
-        <SectionDaoTreasury />
-        <SectionMeritSquare />
-        <About />
+        <Suspense fallback={sectionFallback}>
+          <SectionDaoTreasury />
+        </Suspense>
+        <Suspense fallback={sectionFallback}>
+          <SectionMeritSquare />
+        </Suspense>
+        <Suspense fallback={sectionFallback}>
+          <About />
+        </Suspense>
       </main>
 
       <Footer />
 
-      <ProductDetail
-        product={detailProduct}
-        open={detailOpen}
-        onClose={handleCloseDetail}
-        onAddToCart={addToCart}
-        onBuy={() => setBuyOpen(true)}
-      />
+      <Suspense fallback={null}>
+        <ProductDetail
+          product={detailProduct}
+          open={detailOpen}
+          onClose={handleCloseDetail}
+          onAddToCart={addToCart}
+          onBuy={() => setBuyOpen(true)}
+        />
+      </Suspense>
 
-      <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
+      <Suspense fallback={null}>
+        <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
+      </Suspense>
     </>
   );
 }
@@ -123,6 +148,7 @@ export default function App() {
                         <Routes>
                           <Route path="/" element={<FrontPage />} />
                           <Route path="/forum" element={<ForumPage />} />
+                          <Route path="/tutorials/:slug" element={<Tutorial />} />
                           <Route path="/chat" element={<ChatPage />} />
                           <Route path="/admin" element={<AdminPanel />} />
                           <Route path="/exchange" element={<ExchangePage />} />
