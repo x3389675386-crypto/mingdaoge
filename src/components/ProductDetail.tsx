@@ -10,16 +10,28 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import type { Product } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { grantDailyMerit } from '../lib/task';
 
 interface ProductDetailProps {
   product: Product | null;
   open: boolean;
   onClose: () => void;
   onAddToCart: (product: Product) => void;
+  onBuy?: (product: Product) => void;
 }
 
-export default function ProductDetail({ product, open, onClose, onAddToCart }: ProductDetailProps) {
+export default function ProductDetail({ product, open, onClose, onAddToCart, onBuy }: ProductDetailProps) {
+  const { isAuthenticated } = useAuth();
   if (!product) return null;
+
+  /** 金色「立即结缘」按钮：触发结缘得功德（每日上限 10），再打开购买引导弹窗 */
+  const handleBuy = () => {
+    if (isAuthenticated && onBuy) {
+      void grantDailyMerit('结缘得功德', 5, 10).catch(() => {});
+    }
+    onBuy?.(product);
+  };
 
   return (
     <Dialog
@@ -185,6 +197,28 @@ export default function ProductDetail({ product, open, onClose, onAddToCart }: P
             >
               加入购物车
             </Button>
+
+            {/* 结缘按钮（金色，触发结缘得功德 + 打开购买引导） */}
+            {onBuy && (
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleBuy}
+                sx={{
+                  backgroundColor: 'rgba(201,169,110,0.9)',
+                  color: '#1a1a2e',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '0.95rem',
+                  letterSpacing: '0.15em',
+                  padding: '12px 0',
+                  borderRadius: '2px',
+                  mt: 1.5,
+                  '&:hover': { backgroundColor: '#c9a96e' },
+                }}
+              >
+                立即结缘
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

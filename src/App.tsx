@@ -19,6 +19,8 @@ import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
 import SectionDaoTreasury from './components/front/SectionDaoTreasury';
 import SectionMeritSquare from './components/front/SectionMeritSquare';
+import CheckinCard from './components/CheckinCard';
+import BuyGuideDialog from './components/BuyGuideDialog';
 import type { Product } from './types';
 
 /** 轻量首屏组件（导航 / 首页区块）静态引入，重路由组件走 lazy 拆包 */
@@ -31,6 +33,8 @@ const Profile = lazy(() => import('./pages/Profile'));
 const AdminPanel = lazy(() => import('./components/admin/AdminPanel'));
 const ForumPage = lazy(() => import('./components/ForumPage'));
 const ChatPage = lazy(() => import('./components/ChatPage'));
+const TaskHall = lazy(() => import('./pages/TaskHall'));
+const MyTasks = lazy(() => import('./pages/MyTasks'));
 
 /** MUI 深色主题定制 */
 const darkTheme = createTheme({
@@ -52,6 +56,7 @@ function FrontPage() {
   const { addToCart } = useCart();
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
 
   /** 打开产品详情 */
   const handleDetail = useCallback((product: Product) => {
@@ -69,6 +74,9 @@ function FrontPage() {
     <>
       <Navbar />
       <AnnouncementBar />
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, mt: 3 }}>
+        <CheckinCard compact />
+      </Box>
       <Cart />
 
       <main>
@@ -88,7 +96,10 @@ function FrontPage() {
         open={detailOpen}
         onClose={handleCloseDetail}
         onAddToCart={addToCart}
+        onBuy={() => setBuyOpen(true)}
       />
+
+      <BuyGuideDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
     </>
   );
 }
@@ -124,6 +135,8 @@ export default function App() {
                           <Route path="/register" element={<Register />} />
                           <Route path="/forgot-password" element={<ForgotPassword />} />
                           <Route path="/verify-email" element={<VerifyEmail />} />
+                          <Route path="/tasks" element={<TaskHall />} />
+                          <Route path="/tasks/mine" element={<MyTasks />} />
                         </Routes>
                       </Suspense>
                     </ErrorBoundary>

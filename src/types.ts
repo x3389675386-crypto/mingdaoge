@@ -277,3 +277,98 @@ export interface ChatConversation {
   /** 未读消息数 */
   unreadCount: number;
 }
+
+// =================== P2 修行任务派发系统类型 ===================
+
+/** 任务状态 */
+export type TaskStatus = 'draft' | 'published' | 'closed';
+
+/** 认领 / 凭证状态 */
+export type ClaimStatus = 'claimed' | 'submitted' | 'approved' | 'rejected';
+
+/** 凭证类型 */
+export type ProofType = 'text' | 'image' | 'both';
+
+/** 修行任务定义（cultivation_tasks 表） */
+export interface CultivationTask {
+  /** 任务唯一 ID（BIGINT） */
+  id: number;
+  /** 标题 */
+  title: string;
+  /** 描述（可空） */
+  description: string | null;
+  /** 阳德奖励 */
+  reward_yang_de: number;
+  /** 积分奖励 */
+  reward_points: number;
+  /** 凭证类型 */
+  proof_type: ProofType;
+  /** 身份可见范围（NULL=全员可见） */
+  identity_scope: string[] | null;
+  /** 状态 */
+  status: TaskStatus;
+  /** 名额上限（NULL=不限） */
+  slots: number | null;
+  /** 已认领人数（认领成功时 +1） */
+  claimed_count: number;
+  /** 截止时间（NULL=长期） */
+  deadline: string | null;
+  /** 发布者（admin） */
+  created_by: string | null;
+  /** 创建时间 */
+  created_at: string;
+  /** 更新时间 */
+  updated_at: string;
+}
+
+/** 用户认领 / 凭证 / 审核（task_claims 表） */
+export interface TaskClaim {
+  /** 认领记录 ID（BIGINT） */
+  id: number;
+  /** 关联任务 ID */
+  task_id: number;
+  /** 认领用户 ID（auth.uid） */
+  user_id: string;
+  /** 状态 */
+  status: ClaimStatus;
+  /** 文字凭证 */
+  proof_text: string | null;
+  /** 图片凭证 URL（Storage task-proof/） */
+  proof_image_url: string | null;
+  /** 提交时间 */
+  submitted_at: string | null;
+  /** 审核时间 */
+  reviewed_at: string | null;
+  /** 审核意见（驳回原因 / 通过备注） */
+  review_note: string | null;
+  /** 奖励是否已发放 */
+  reward_granted: boolean;
+  /** 创建时间 */
+  created_at: string;
+}
+
+/** 每日签到记录（checkin_logs 表） */
+export interface CheckinLog {
+  /** 记录 ID（BIGINT） */
+  id: number;
+  /** 用户 ID（auth.uid） */
+  user_id: string;
+  /** 签到日期 */
+  checkin_date: string;
+  /** 本次签到获得阳德 */
+  yang_de: number;
+  /** 创建时间 */
+  created_at: string;
+}
+
+/** 我的认领（携带关联任务信息的联表视图） */
+export interface MyTaskClaim extends TaskClaim {
+  /** 关联任务（join cultivation_tasks） */
+  task?: Pick<CultivationTask, 'title' | 'reward_yang_de' | 'reward_points' | 'proof_type'>;
+}
+
+/** 待审认领（admin，携带关联任务信息的联表视图） */
+export interface PendingTaskClaim extends TaskClaim {
+  /** 关联任务（join cultivation_tasks） */
+  task?: Pick<CultivationTask, 'title' | 'reward_yang_de' | 'reward_points' | 'proof_type'>;
+}

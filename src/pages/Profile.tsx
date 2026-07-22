@@ -19,6 +19,7 @@ import {
   Chip,
 } from '@mui/material';
 import Navbar from '../components/Navbar';
+import CheckinCard from '../components/CheckinCard';
 import { useAuth } from '../context/AuthContext';
 import { IDENTITY_GROUPS, getIdentityLabel } from '../lib/identities';
 import { authFieldSx, authButtonSx } from './authStyles';
@@ -207,6 +208,9 @@ export default function Profile() {
           >
             {user?.email ?? ''}
           </Typography>
+
+          {/* 每日签到卡片 */}
+          <CheckinCard />
 
           {/* 反馈信息 */}
           {feedback && (

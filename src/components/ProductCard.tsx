@@ -2,6 +2,8 @@ import { Card, CardContent, CardActions, Button, Chip, Box, Typography } from '@
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import type { Product } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { grantDailyMerit } from '../lib/task';
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +20,15 @@ const categoryChipColor: Record<string, string> = {
 };
 
 export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: ProductCardProps) {
+  const { isAuthenticated } = useAuth();
+
+  /** 金色「购买/结缘」按钮：触发结缘得功德（每日上限 10），再打开购买引导弹窗 */
+  const handleBuy = () => {
+    if (isAuthenticated) {
+      void grantDailyMerit('结缘得功德', 5, 10).catch(() => {});
+    }
+    onBuy(product);
+  };
   return (
     <Card
       className="animate-fade-in-up group"
@@ -159,7 +170,7 @@ export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: P
         <Button
           size="small"
           startIcon={<ShoppingBagIcon />}
-          onClick={() => onBuy(product)}
+          onClick={handleBuy}
           sx={{
             backgroundColor: 'rgba(201,169,110,0.9)',
             color: '#1a1a2e',

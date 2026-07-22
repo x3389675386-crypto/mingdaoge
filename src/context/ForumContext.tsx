@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { ForumPost, ForumCategory, ForumCategoryDB, GongfaMaterial } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { grantDailyMerit } from '../lib/task';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
 import { ensureGuestId } from '../lib/guestIdentity';
 import { useAuth } from './AuthContext';
@@ -237,6 +238,13 @@ export function ForumProvider({ children }: { children: ReactNode }) {
 
     const newPost = mapDbToPost(data as Record<string, unknown>);
     setPosts((prev) => [newPost, ...prev]);
+
+    // 发帖得功德：系统自动发放，每日上限 10 阳德（grant_daily_merit 内部校验登录 / 上限）
+    if (isSupabaseConfigured && isAuthenticated) {
+      grantDailyMerit('发帖得功德', 2, 10).catch((err) => {
+        console.debug('[明道阁] 发帖得功德发放失败（可忽略）:', err);
+      });
+    }
 
     // 功法电子书上传（Storage images/gongfa/）+ 写 gongfa_materials
     const ebook = post.ebookFile;

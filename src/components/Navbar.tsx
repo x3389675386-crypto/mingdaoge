@@ -21,6 +21,7 @@ const navLinks = [
   { label: '论坛', href: '/forum', isRoute: true },
   { label: '兑换', href: '/exchange', isRoute: true },
   { label: '私聊', href: '/chat', isRoute: true },
+  { label: '任务大厅', href: '/tasks', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },
   { label: '联系', href: '#footer', sectionId: 'footer' },
   { label: '登录', href: '/login', isRoute: true },
