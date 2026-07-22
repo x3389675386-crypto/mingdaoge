@@ -1,6 +1,6 @@
 /**
  * 首页板块三：积德坊 / 功德赚取。
- * 展示当前阳德 / 积分余额（读 profile），CTA 跳 /exchange，附「任务系统即将上线」提示条。
+ * 展示当前阳德 / 积分余额（读 profile），CTA 跳 /exchange，附「任务大厅已开放」提示条。
  */
 
 import { Box, Typography, Button, Chip } from '@mui/material';
