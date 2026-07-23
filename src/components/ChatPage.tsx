@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Navbar from './Navbar';
 import Footer from './Footer';
 import ChatView from './ChatView';
 import NicknameDialog from './NicknameDialog';
@@ -45,10 +44,9 @@ export default function ChatPage() {
 
   return (
     <>
-      <Navbar />
       <Box
         sx={{
-          pt: 10,
+          pt: 4,
           background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)',
           borderBottom: '1px solid rgba(201,169,110,0.1)',
         }}

@@ -128,6 +128,9 @@ export default function AnnouncementBar() {
       role="region"
       aria-label="站点公告"
       sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: (theme) => theme.zIndex.appBar - 1,
         backgroundColor: 'rgba(22, 33, 62, 0.92)',
         borderBottom: '1px solid rgba(201,169,110,0.18)',
         backdropFilter: 'blur(4px)',

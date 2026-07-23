@@ -30,7 +30,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ImageIcon from '@mui/icons-material/Image';
-import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import {
   fetchMyClaims,
@@ -342,7 +341,6 @@ export default function MyTasks() {
   if (!isAuthenticated) {
     return (
       <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-        <Navbar />
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 'calc(100vh - 64px)' }}>
           <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '1.3rem' }}>请先登录</Typography>
           <Button variant="contained" onClick={() => navigate('/login')} sx={{ backgroundColor: 'rgba(201,169,110,0.9)', color: '#1a1a2e', fontFamily: 'var(--font-serif)', borderRadius: '2px' }}>
@@ -358,7 +356,6 @@ export default function MyTasks() {
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-      <Navbar />
       <Box sx={{ display: 'flex', justifyContent: 'center', px: 2, py: 6 }}>
         <Box sx={{ width: 800, maxWidth: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>

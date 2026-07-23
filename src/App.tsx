@@ -83,9 +83,6 @@ function FrontPage() {
 
   return (
     <>
-      <Navbar />
-      <AnnouncementBar />
-
       <Suspense fallback={null}>
         <Cart />
       </Suspense>
@@ -138,6 +135,20 @@ export default function App() {
                 <ChatProvider>
                   <ExchangeProvider>
                     <ErrorBoundary title="页面出错了">
+                      {/* 全站常驻头部：公告栏 + 导航栏统一为 sticky，置于文档流中，
+                          页面内容自动下移，无需各页手动 pt（修复缺陷 A / B） */}
+                      <Box
+                        component="header"
+                        sx={{
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: (theme) => theme.zIndex.appBar,
+                          bgcolor: '#1a1a2e',
+                        }}
+                      >
+                        <AnnouncementBar />
+                        <Navbar />
+                      </Box>
                       <Suspense
                         fallback={
                           <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>

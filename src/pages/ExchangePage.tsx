@@ -30,7 +30,6 @@ import { useExchange } from '../context/ExchangeContext';
 import { useAuth } from '../context/AuthContext';
 import { listExchangeItems } from '../lib/exchange';
 import type { ExchangeItem, ItemType } from '../types';
-import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 /** 兑换项类型图标 */
@@ -122,8 +121,7 @@ export default function ExchangePage() {
   if (!isAuthenticated) {
     return (
       <>
-        <Navbar />
-        <Box sx={{ pt: 20, textAlign: 'center', color: 'rgba(245,240,235,0.6)', fontFamily: 'var(--font-serif)', minHeight: '60vh' }}>
+        <Box sx={{ pt: 12, textAlign: 'center', color: 'rgba(245,240,235,0.6)', fontFamily: 'var(--font-serif)', minHeight: '60vh' }}>
           <Typography sx={{ fontSize: '1.2rem' }}>请先登录后再进入兑换中心</Typography>
         </Box>
         <Footer />
@@ -133,8 +131,7 @@ export default function ExchangePage() {
 
   return (
     <>
-      <Navbar />
-      <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 4 }, py: 12 }}>
+      <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         {/* 标题 + 余额 */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: '2.2rem', color: '#c9a96e' }}>兑换中心</Typography>

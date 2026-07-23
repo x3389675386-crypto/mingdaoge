@@ -19,14 +19,15 @@ import {
   Chip,
   Container,
   Divider,
+  Snackbar,
 } from '@mui/material';
-import Navbar from '../components/Navbar';
 import CheckinCard from '../components/CheckinCard';
 import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { IDENTITY_GROUPS, getIdentityLabel } from '../lib/identities';
 import { authFieldSx, authButtonSx } from './authStyles';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { buildInviteLink, copyToClipboard } from '../lib/invite';
 import type { IdentityType } from '../types';
 
 /** 反馈信息结构 */
@@ -91,6 +92,26 @@ export default function Profile() {
 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [savingSection, setSavingSection] = useState<'nickname' | 'password' | 'identity' | null>(null);
+
+  /** 邀请链接（由 user_code 动态拼接当前域名） */
+  const inviteLink = profile?.user_code ? buildInviteLink(profile.user_code) : '';
+  /** 复制邀请链接反馈 */
+  const [copySnack, setCopySnack] = useState<{ open: boolean; msg: string; severity: 'success' | 'error' }>({
+    open: false,
+    msg: '',
+    severity: 'success',
+  });
+
+  /** 复制邀请链接到剪贴板 */
+  const handleCopyInvite = async () => {
+    if (!inviteLink) return;
+    const ok = await copyToClipboard(inviteLink);
+    setCopySnack({
+      open: true,
+      msg: ok ? '邀请链接已复制，去分享给好友吧~' : '复制失败，请长按手动复制',
+      severity: ok ? 'success' : 'error',
+    });
+  };
 
   /** 头像上传相关：隐藏 file input 的 ref 与上传中状态 */
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -191,7 +212,6 @@ export default function Profile() {
   if (!isAuthenticated || !profile) {
     return (
       <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-        <Navbar />
         <Container maxWidth="sm" sx={{ py: { xs: 8, md: 12 } }}>
           <Paper
             elevation={0}
@@ -246,7 +266,6 @@ export default function Profile() {
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-      <Navbar />
       <Container maxWidth="md" sx={{ py: { xs: 6, md: 9 } }}>
         <Paper
           elevation={0}
@@ -373,6 +392,53 @@ export default function Profile() {
             <InfoBadge label="道友编号" value={profile.user_code ?? '—'} />
           </Box>
 
+          {/* 我的邀请（暗金卡片：邀请码 + 邀请链接 + 复制） */}
+          <Section title="我的邀请">
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2, alignItems: 'center' }}>
+              <InfoBadge label="我的邀请码" value={profile.user_code ?? '—'} />
+            </Box>
+            <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.5)', fontSize: '0.8rem', mb: 1 }}>
+              邀请链接（分享给好友，TA 注册后你得积分奖励）
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 200,
+                  px: 2,
+                  py: 1,
+                  backgroundColor: 'rgba(201,169,110,0.06)',
+                  border: '1px solid rgba(201,169,110,0.12)',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  color: '#c9a96e',
+                  fontSize: '0.8rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {inviteLink || '—'}
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={handleCopyInvite}
+                disabled={!inviteLink}
+                sx={{
+                  color: '#c9a96e',
+                  borderColor: 'rgba(201,169,110,0.4)',
+                  fontFamily: 'var(--font-serif)',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
+                  '&.Mui-disabled': { color: 'rgba(201,169,110,0.3)', borderColor: 'rgba(201,169,110,0.15)' },
+                }}
+              >
+                复制链接
+              </Button>
+            </Box>
+          </Section>
+
           {/* 修改昵称 */}
           <Section title="修改昵称">
             <TextField
@@ -496,6 +562,22 @@ export default function Profile() {
           </Section>
         </Paper>
       </Container>
+
+      {/* 复制邀请链接反馈 */}
+      <Snackbar
+        open={copySnack.open}
+        autoHideDuration={2500}
+        onClose={() => setCopySnack((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={copySnack.severity}
+          sx={{ fontFamily: 'var(--font-serif)' }}
+          onClose={() => setCopySnack((prev) => ({ ...prev, open: false }))}
+        >
+          {copySnack.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

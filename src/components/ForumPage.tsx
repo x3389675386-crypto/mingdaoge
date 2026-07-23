@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -34,7 +34,7 @@ import { useComments } from '../context/CommentContext';
 import { FORUM_CATEGORIES, type ForumPost } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import Navbar from './Navbar';
+import { getPalmistryDailyLimit, PALMIRSTRY_CATEGORY } from '../lib/palmistry';
 import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
 import PrivateChatButton from './PrivateChatButton';
@@ -94,7 +94,7 @@ const FIXED_TUTORIALS: GongfaTutorial[] = [
 ];
 
 export default function ForumPage() {
-  const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning } = useForum();
+  const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning, palmistryClaim, clearPalmistryClaim } = useForum();
   const { commentsByPostId } = useComments();
   const { isAdmin, isAuthenticated, profile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -124,6 +124,42 @@ export default function ForumPage() {
     severity: 'success',
   });
 
+  /** 看手相每日限领次数（读 site_settings，读不到用默认 1；<=0 视为关闭活动） */
+  const [palmistryDailyLimit, setPalmistryDailyLimit] = useState(1);
+  useEffect(() => {
+    let active = true;
+    getPalmistryDailyLimit()
+      .then((v) => {
+        if (active) setPalmistryDailyLimit(v);
+      })
+      .catch(() => {
+        if (active) setPalmistryDailyLimit(1);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /** 看手相领奖结果 → Toast（成功提示积分与剩余次数；未开放/已领/超限提示对应文案） */
+  useEffect(() => {
+    if (!palmistryClaim) return;
+    if (palmistryClaim.granted) {
+      setSnackbar({
+        open: true,
+        message: `看手相 +${palmistryClaim.points} 积分（今日剩 ${palmistryClaim.remaining} 次）`,
+        severity: 'success',
+      });
+    } else {
+      const reason = palmistryClaim.reason || '领取失败';
+      setSnackbar({
+        open: true,
+        message: reason,
+        severity: reason === '功能暂未开放' ? 'info' : 'warning',
+      });
+    }
+    clearPalmistryClaim();
+  }, [palmistryClaim, clearPalmistryClaim]);
+
   /** 固定功法教程弹窗 */
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [activeTutorial, setActiveTutorial] = useState<GongfaTutorial | null>(null);
@@ -142,6 +178,15 @@ export default function ForumPage() {
     ? categories
     : FORUM_CATEGORIES.map((c) => ({ id: 0, value: c.value, label: c.label, icon: c.icon, sort_order: 0, is_system: true }));
   const defaultCategory = activeCategories.find((c) => c.value !== 'gongfa')?.value || 'paranormal';
+
+  /** 发帖可选分类：排除 gongfa，并确保「看手相」始终可选（即使 060 未执行，分类下拉也出现） */
+  const postCategories = useMemo(() => {
+    const base = activeCategories.filter((c) => c.value !== 'gongfa');
+    if (!base.some((c) => c.value === PALMIRSTRY_CATEGORY)) {
+      base.push({ id: -1, value: PALMIRSTRY_CATEGORY, label: '看手相', icon: '🔮', sort_order: 99, is_system: true });
+    }
+    return base;
+  }, [activeCategories]);
 
   const displayPosts = useMemo(() => {
     const list = activeCategory === 'all' ? posts : posts.filter((p) => p.category === activeCategory);
@@ -177,6 +222,17 @@ export default function ForumPage() {
   const handleCloseDetail = () => {
     setDetailOpen(false);
     setTimeout(() => setDetailPost(null), 300);
+  };
+
+  /** 打开看手相发帖：未登录引导登录；已登录预选 palmistry 分类并打开发帖弹窗 */
+  const handleOpenPalmistry = () => {
+    if (palmistryDailyLimit <= 0) return; // 活动关闭
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/forum');
+      return;
+    }
+    setNewPost((p) => ({ ...p, category: PALMIRSTRY_CATEGORY }));
+    setDialogOpen(true);
   };
 
   /** 点赞（游客态引导登录，已赞禁用） */
@@ -262,11 +318,9 @@ export default function ForumPage() {
 
   return (
     <>
-      <Navbar />
-
       <Box
         sx={{
-          pt: 12,
+          pt: 4,
           pb: 4,
           px: 2,
           textAlign: 'center',
@@ -281,6 +335,46 @@ export default function ForumPage() {
         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.5)', fontSize: '0.9rem', letterSpacing: '0.15em' }}>
           以文会友 · 以道相交 · 畅所欲言
         </Typography>
+      </Box>
+
+      {/* 看手相活动入口（金色描边卡片）；每日限领 <=0 时置灰显示「活动暂未开启」 */}
+      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, mt: 3 }}>
+        <Card
+          sx={{
+            backgroundColor: 'rgba(201,169,110,0.06)',
+            border: '1px solid rgba(201,169,110,0.5)',
+            borderRadius: '4px',
+            transition: 'border-color 0.3s',
+            '&:hover': { borderColor: '#c9a96e' },
+          }}
+        >
+          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+            <Box>
+              <Typography sx={{ fontFamily: 'var(--font-calligraphy)', color: '#c9a96e', fontSize: '1.3rem' }}>
+                🔮 看手相
+              </Typography>
+              <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.82rem', mt: 0.5 }}>
+                发布看手相主题帖即可领积分（每日限领 {palmistryDailyLimit} 次）
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              disabled={palmistryDailyLimit <= 0}
+              onClick={handleOpenPalmistry}
+              sx={{
+                color: '#c9a96e',
+                borderColor: 'rgba(201,169,110,0.6)',
+                fontFamily: 'var(--font-serif)',
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.1)' },
+                '&.Mui-disabled': { color: 'rgba(201,169,110,0.3)', borderColor: 'rgba(201,169,110,0.15)' },
+              }}
+            >
+              {palmistryDailyLimit <= 0 ? '活动暂未开启' : '去发看手相帖'}
+            </Button>
+          </CardContent>
+        </Card>
       </Box>
 
       <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
@@ -588,7 +682,7 @@ export default function ForumPage() {
               fullWidth
               sx={fieldSx}
             >
-                {activeCategories.filter((c) => c.value !== 'gongfa').map((cat) => (
+                {postCategories.map((cat) => (
                   <MenuItem key={cat.value} value={cat.value} sx={{ fontFamily: 'var(--font-serif)' }}>
                     {cat.icon} {cat.label}
                   </MenuItem>

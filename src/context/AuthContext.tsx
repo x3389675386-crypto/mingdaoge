@@ -59,7 +59,8 @@ interface AuthContextValue {
     email: string,
     password: string,
     nickname: string,
-    identity?: SignUpIdentity
+    identity?: SignUpIdentity,
+    inviteCode?: string
   ) => Promise<AuthResult>;
   signInPassword: (email: string, password: string) => Promise<AuthResult>;
   signInOtp: (email: string) => Promise<AuthResult>;
@@ -208,13 +209,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string,
       password: string,
       nickname: string,
-      identity?: SignUpIdentity
+      identity?: SignUpIdentity,
+      inviteCode?: string
     ): Promise<AuthResult> => {
       if (!isSupabaseConfigured) return { error: '服务暂未配置，无法注册' };
       const metaData: Record<string, unknown> = { nickname };
       if (identity) {
         metaData.identity_type = identity.type;
         metaData.identity_subtype = identity.subtype ?? null;
+      }
+      // 携带邀请码（仅非空时写入 raw_user_meta_data.invite_code，供注册触发器解析发奖）
+      const code = inviteCode?.trim();
+      if (code) {
+        metaData.invite_code = code;
       }
       const { error } = await supabase.auth.signUp({
         email,

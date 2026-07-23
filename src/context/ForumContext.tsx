@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { grantDailyMerit } from '../lib/task';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
 import { ensureGuestId } from '../lib/guestIdentity';
+import { claimPalmistryReward, PALMIRSTRY_CATEGORY, type PalmistryClaimResult } from '../lib/palmistry';
 import { useAuth } from './AuthContext';
 
 /** 新建帖子入参（支持功法电子书上传） */
@@ -36,6 +37,10 @@ interface ForumContextValue {
   refresh: () => Promise<void>;
   /** 最后一次过滤警告 */
   lastWarning: string | null;
+  /** 看手相领奖结果（发布 palmistry 分类帖后填充，供 ForumPage 弹 Toast） */
+  palmistryClaim: PalmistryClaimResult | null;
+  /** 清除看手相领奖结果 */
+  clearPalmistryClaim: () => void;
 }
 
 const ForumContext = createContext<ForumContextValue | null>(null);
@@ -81,6 +86,8 @@ export function ForumProvider({ children }: { children: ReactNode }) {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [lastWarning, setLastWarning] = useState<string | null>(null);
+  /** 看手相领奖结果（发帖后填充，供 ForumPage 弹 Toast） */
+  const [palmistryClaim, setPalmistryClaim] = useState<PalmistryClaimResult | null>(null);
 
   /** 加载动态分类（forum_categories） */
   const loadCategories = useCallback(async () => {
@@ -230,11 +237,13 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       guest_id: guestId,
       // 作者头像：写入当前用户头像，保证帖子展示真图（兼容 050 未执行时回退）
       author_avatar_url: profile?.avatar_url ?? null,
+      // 作者用户 ID：供看手相 RPC 校验「仅可领取自己帖」（兼容 060 未执行时回退）
+      user_id: user?.id ?? null,
     };
     if (post.imageUrl) insertData.image_url = post.imageUrl;
 
-    // 主插入：带 author_nickname / author_avatar_url；
-    // 兼容尚未执行「author_nickname 列」或「050 author_avatar_url 列」迁移的环境
+    // 主插入：带 author_nickname / author_avatar_url / user_id；
+    // 兼容尚未执行相关迁移（author_nickname / 050 author_avatar_url / 060 user_id）的环境
     const res = await supabase.from('forum_posts').insert(insertData).select().single();
     let data: Record<string, unknown> | null = (res.data as Record<string, unknown>) ?? null;
     let error = res.error;
@@ -243,11 +252,13 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       error &&
       (error.code === '42703' ||
         (error.message || '').includes('author_nickname') ||
-        (error.message || '').includes('author_avatar_url'))
+        (error.message || '').includes('author_avatar_url') ||
+        (error.message || '').includes('user_id'))
     ) {
-      const { author_nickname: _omitN, author_avatar_url: _omitA, ...legacyData } = insertData;
+      const { author_nickname: _omitN, author_avatar_url: _omitA, user_id: _omitU, ...legacyData } = insertData;
       void _omitN;
       void _omitA;
+      void _omitU;
       const retry = await supabase.from('forum_posts').insert(legacyData).select().single();
       data = (retry.data as Record<string, unknown>) ?? null;
       error = retry.error;
@@ -272,6 +283,19 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       grantDailyMerit('发帖得功德', 2, 10).catch((err) => {
         console.debug('[明道阁] 发帖得功德发放失败（可忽略）:', err);
       });
+    }
+
+    // 看手相发帖领奖：仅 palmistry 分类、已登录、已配置 Supabase 时触发。
+    // 防刷由 RPC 服务端控制（每帖限领一次 + 每日上限）。失败/未开放不影响发帖成功。
+    setPalmistryClaim(null);
+    if (isSupabaseConfigured && isAuthenticated && post.category === PALMIRSTRY_CATEGORY && newPost.id) {
+      claimPalmistryReward(newPost.id)
+        .then(setPalmistryClaim)
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message : '领取失败';
+          console.debug('[明道阁] 看手相领奖失败（可忽略）:', msg);
+          setPalmistryClaim({ granted: false, reason: msg });
+        });
     }
 
     // 功法电子书上传（Storage images/gongfa/）+ 写 gongfa_materials
@@ -382,6 +406,8 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         postsByCategory,
         refresh,
         lastWarning,
+        palmistryClaim,
+        clearPalmistryClaim: () => setPalmistryClaim(null),
       }}
     >
       {children}

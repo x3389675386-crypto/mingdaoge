@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { TextField, Button, Box, Alert } from '@mui/material';
 import AuthCard from '../components/AuthCard';
 import IdentitySelector, { type IdentityValue } from '../components/IdentitySelector';
@@ -15,6 +15,10 @@ import type { IdentityType } from '../types';
 export default function Register() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // 邀请码（URL ?invite=，大小写不敏感，后端 upper 解析；无效码不提示、不影响注册）
+  const inviteCode = searchParams.get('invite')?.trim() || '';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,7 +58,7 @@ export default function Register() {
     const { error: err } = await signUp(e, password, filter.filteredText, {
       type: identity.type as IdentityType,
       subtype: identity.subtype,
-    });
+    }, inviteCode || undefined);
     setLoading(false);
     if (err) {
       setError(err);
@@ -87,6 +91,11 @@ export default function Register() {
       {info && (
         <Alert severity="success" sx={{ mb: 2, fontFamily: 'var(--font-serif)' }}>
           {info}
+        </Alert>
+      )}
+      {inviteCode && (
+        <Alert severity="info" sx={{ mb: 2, fontFamily: 'var(--font-serif)' }}>
+          你正通过邀请码 {inviteCode} 的邀请加入明道阁 🎉
         </Alert>
       )}
       <TextField

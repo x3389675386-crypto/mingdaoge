@@ -23,7 +23,6 @@ import {
   Alert,
 } from '@mui/material';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
-import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { fetchPublishedTasks, claimTask } from '../lib/task';
 import type { CultivationTask, ProofType } from '../types';
@@ -242,7 +241,6 @@ export default function TaskHall() {
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-      <Navbar />
       <Box sx={{ display: 'flex', justifyContent: 'center', px: 2, py: 6 }}>
         <Box sx={{ width: 960, maxWidth: '100%' }}>
           {/* 标题栏 */}
