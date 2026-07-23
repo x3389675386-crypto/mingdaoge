@@ -3,7 +3,7 @@
  * 沿用现有深色 + 金（#c9a96e）主题与 var(--font-serif) 衬线字体。
  */
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -26,6 +26,7 @@ import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { IDENTITY_GROUPS, getIdentityLabel } from '../lib/identities';
 import { authFieldSx, authButtonSx } from './authStyles';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { IdentityType } from '../types';
 
 /** 反馈信息结构 */
@@ -35,13 +36,50 @@ interface Feedback {
 }
 
 export default function Profile() {
-  const { isAuthenticated, profile, user, signOut, updateNickname, updateIdentity, updatePassword } = useAuth();
+  const { isAuthenticated, profile, user, signOut, updateNickname, updateIdentity, updatePassword, updateAvatar } = useAuth();
   const navigate = useNavigate();
 
   /** 退出登录 */
   const handleLogout = async () => {
     await signOut();
     navigate('/');
+  };
+
+  /** 更换头像：选择图片后上传到 Storage images/avatars/，写回 profiles.avatar_url */
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 允许重新选择同一文件（重置 value 以触发后续 change）
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showFeedback('error', '请选择图片文件');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showFeedback('error', '图片大小不能超过 2MB');
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      showFeedback('error', '服务未配置，暂不支持上传头像');
+      return;
+    }
+    setAvatarUploading(true);
+    setFeedback(null);
+    try {
+      const filePath = `avatars/${user!.id}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from('images')
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+      await updateAvatar(data.publicUrl);
+      showFeedback('success', '头像已更新');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '头像上传失败，请重试';
+      showFeedback('error', `头像上传失败：${msg}`);
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const [nickname, setNickname] = useState('');
@@ -53,6 +91,10 @@ export default function Profile() {
 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [savingSection, setSavingSection] = useState<'nickname' | 'password' | 'identity' | null>(null);
+
+  /** 头像上传相关：隐藏 file input 的 ref 与上传中状态 */
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   /** 登录态：用 profile 初始化各表单默认值 */
   useEffect(() => {
@@ -218,7 +260,41 @@ export default function Profile() {
         >
           {/* 个人中心头部：大头像 + 昵称 + 身份 / 阳德 / 积分概览 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', mb: 1 }}>
-            <UserAvatar name={profile.nickname} size={80} />
+            {/* 头像 + 更换按钮 */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <UserAvatar name={profile.nickname} avatarUrl={profile.avatar_url} size={80} />
+              <Button
+                component="label"
+                variant="outlined"
+                size="small"
+                disabled={!isSupabaseConfigured || avatarUploading}
+                sx={{
+                  color: '#c9a96e',
+                  borderColor: 'rgba(201,169,110,0.4)',
+                  fontFamily: 'var(--font-serif)',
+                  textTransform: 'none',
+                  fontSize: '0.72rem',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    borderColor: '#c9a96e',
+                    backgroundColor: 'rgba(201,169,110,0.08)',
+                  },
+                  '&.Mui-disabled': {
+                    color: 'rgba(201,169,110,0.3)',
+                    borderColor: 'rgba(201,169,110,0.15)',
+                  },
+                }}
+              >
+                {avatarUploading ? '上传中…' : (isSupabaseConfigured ? '更换头像' : '服务未配置')}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleAvatarChange}
+                />
+              </Button>
+            </Box>
             <Box sx={{ flex: 1, minWidth: 200 }}>
               <Typography
                 sx={{

@@ -127,6 +127,8 @@ export interface ForumPost {
   isLiked?: boolean;
   /** 聊天身份 guest_id（用于作者「私聊」入口，历史内容为空） */
   guest_id?: string;
+  /** 作者头像 URL（发帖时写入，与 profiles.avatar_url 同源；未上传为 undefined） */
+  author_avatar_url?: string | null;
 }
 
 /**

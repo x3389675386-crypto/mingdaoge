@@ -55,6 +55,7 @@ function mapDbToPost(row: Record<string, unknown>): ForumPost {
     imageUrl: (row.image_url as string) || undefined,
     likes: (row.likes as number) ?? 0,
     guest_id: (row.guest_id as string) || undefined,
+    author_avatar_url: (row.author_avatar_url as string) || undefined,
   };
 }
 
@@ -214,6 +215,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
         imageUrl: post.imageUrl,
         guest_id: guestId,
+        author_avatar_url: profile?.avatar_url ?? null,
       };
       setPosts((prev) => [newPost, ...prev]);
       return newPost.id;
@@ -226,17 +228,26 @@ export function ForumProvider({ children }: { children: ReactNode }) {
       content: finalContent,
       category: post.category,
       guest_id: guestId,
+      // 作者头像：写入当前用户头像，保证帖子展示真图（兼容 050 未执行时回退）
+      author_avatar_url: profile?.avatar_url ?? null,
     };
     if (post.imageUrl) insertData.image_url = post.imageUrl;
 
-    // 主插入：带 author_nickname；兼容尚未执行「author_nickname 列」迁移的环境
+    // 主插入：带 author_nickname / author_avatar_url；
+    // 兼容尚未执行「author_nickname 列」或「050 author_avatar_url 列」迁移的环境
     const res = await supabase.from('forum_posts').insert(insertData).select().single();
     let data: Record<string, unknown> | null = (res.data as Record<string, unknown>) ?? null;
     let error = res.error;
 
-    if (error && (error.code === '42703' || (error.message || '').includes('author_nickname'))) {
-      const { author_nickname: _omit, ...legacyData } = insertData;
-      void _omit;
+    if (
+      error &&
+      (error.code === '42703' ||
+        (error.message || '').includes('author_nickname') ||
+        (error.message || '').includes('author_avatar_url'))
+    ) {
+      const { author_nickname: _omitN, author_avatar_url: _omitA, ...legacyData } = insertData;
+      void _omitN;
+      void _omitA;
       const retry = await supabase.from('forum_posts').insert(legacyData).select().single();
       data = (retry.data as Record<string, unknown>) ?? null;
       error = retry.error;

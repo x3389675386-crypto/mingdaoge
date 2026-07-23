@@ -31,6 +31,8 @@ export interface ProfileRow {
   yang_de: number;
   /** 积分余额 */
   points: number;
+  /** 头像 URL（Storage images 桶 avatars/ 前缀下的公共读 URL；未上传为 null） */
+  avatar_url: string | null;
 }
 
 /**

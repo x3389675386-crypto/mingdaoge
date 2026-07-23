@@ -71,6 +71,8 @@ interface AuthContextValue {
   updateIdentity: (type: IdentityType, subtype?: string | null) => Promise<void>;
   /** 修改密码（Supabase auth.updateUser），返回中文错误文案或空对象 */
   updatePassword: (newPassword: string) => Promise<AuthResult>;
+  /** 修改头像（写 profiles.avatar_url 并同步本地态），未配置 Supabase 时仅更新本地态 */
+  updateAvatar: (url: string) => Promise<void>;
   /** 重新拉取当前用户 profile（余额变动后用于刷新导航栏余额） */
   refreshProfile: () => Promise<void>;
 }
@@ -101,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select(
           'id, guest_id, nickname, chat_guest_id, role, created_at, ' +
-            'identity_type, identity_subtype, user_code, yang_de, points'
+            'identity_type, identity_subtype, user_code, yang_de, points, avatar_url'
         )
         .eq('id', currentUser.id)
         .single();
@@ -334,6 +336,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /**
+   * 修改头像：更新 profiles.avatar_url 并同步本地 profile 状态。
+   * 未配置 Supabase 时仅更新本地态（不报错，便于降级体验）。
+   * 已配置但 profiles 表无 avatar_url 列（050 未执行）时会抛出错误，由调用方捕获并友好提示。
+   */
+  const updateAvatar = useCallback(
+    async (url: string) => {
+      if (isSupabaseConfigured && user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: url })
+          .eq('id', user.id);
+        if (error) {
+          console.error('[明道阁] 更新头像失败:', error.message);
+          throw error;
+        }
+      }
+      // 无论是否配置均同步本地态（配置态下已成功落库）
+      setProfile((prev) => (prev ? { ...prev, avatar_url: url } : prev));
+    },
+    [user]
+  );
+
   const value: AuthContextValue = {
     session,
     user,
@@ -352,6 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateNickname,
     updateIdentity,
     updatePassword,
+    updateAvatar,
     refreshProfile,
   };
 

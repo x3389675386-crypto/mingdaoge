@@ -184,7 +184,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
         {/* 作者 & 时间 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <UserAvatar name={post.author_nickname || post.author} size={28} />
+            <UserAvatar name={post.author_nickname || post.author} avatarUrl={post.author_avatar_url} size={28} />
             <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.7)', fontSize: '0.9rem', fontWeight: 600 }}>
               {post.author_nickname || post.author}
             </Typography>

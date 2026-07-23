@@ -200,7 +200,7 @@ export default function Navbar() {
                 aria-label="个人中心"
               >
                 {isAuthenticated && profile?.nickname ? (
-                  <UserAvatar name={profile.nickname} size={32} />
+                  <UserAvatar name={profile.nickname} avatarUrl={profile?.avatar_url} size={32} />
                 ) : (
                   <Avatar
                     sx={{
