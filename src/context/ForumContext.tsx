@@ -7,7 +7,9 @@ import { ensureGuestId } from '../lib/guestIdentity';
 import { useAuth } from './AuthContext';
 
 /** 新建帖子入参（支持功法电子书上传） */
-export interface NewForumPost extends Omit<ForumPost, 'id' | 'createdAt'> {
+export interface NewForumPost extends Omit<ForumPost, 'id' | 'createdAt' | 'author'> {
+  /** 作者昵称（选填，不传则由 ForumContext 自动取当前登录用户昵称） */
+  author?: string;
   /** 功法电子书文件（仅 gongfa 帖，admin 上传） */
   ebookFile?: File | null;
 }
@@ -40,9 +42,12 @@ const ForumContext = createContext<ForumContextValue | null>(null);
 
 /** 数据库行 → 前端 ForumPost 对象 */
 function mapDbToPost(row: Record<string, unknown>): ForumPost {
+  const author = (row.author as string) || '匿名';
+  const authorNickname = (row.author_nickname as string) || author;
   return {
     id: row.id as number,
-    author: (row.author as string) || '匿名',
+    author,
+    author_nickname: authorNickname,
     title: (row.title as string) || '',
     content: (row.content as string) || '',
     category: (row.category as string) || 'chat',
@@ -68,7 +73,7 @@ function mapDbToMaterial(row: Record<string, unknown>): GongfaMaterial {
 
 /** Provider 组件 */
 export function ForumProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isAdmin, user } = useAuth();
+  const { isAuthenticated, isAdmin, user, profile, getMyGuestId } = useAuth();
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [categories, setCategories] = useState<ForumCategoryDB[]>([]);
   const [gongfaMaterials, setGongfaMaterials] = useState<GongfaMaterial[]>([]);
@@ -186,19 +191,23 @@ export function ForumProvider({ children }: { children: ReactNode }) {
 
     const finalTitle = titleFilter.filteredText;
     const finalContent = contentFilter.filteredText;
-    const finalAuthor = containsProfanity(post.author).filteredText;
+    // 作者昵称：登录态自动取当前用户昵称（与论坛展示一致），兜底「匿名道友」
+    const finalAuthor =
+      containsProfanity(profile?.nickname?.trim() || post.author || '匿名道友').filteredText;
 
     // 记录过滤警告（如有）
     const titleWarning = getProfanityWarning(post.title);
     const contentWarning = getProfanityWarning(post.content);
     setLastWarning(titleWarning || contentWarning || null);
 
-    const guestId = ensureGuestId();
+    // 作者 guest_id：登录态用 profile.guest_id，未登录兜底本地 guest_id
+    const guestId = getMyGuestId() ?? ensureGuestId();
 
     if (!isSupabaseConfigured) {
       const newPost: ForumPost = {
         id: Date.now(),
         author: finalAuthor || '匿名',
+        author_nickname: finalAuthor || '匿名',
         title: finalTitle,
         content: finalContent,
         category: post.category,
@@ -212,6 +221,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
 
     const insertData: Record<string, unknown> = {
       author: finalAuthor || '匿名',
+      author_nickname: finalAuthor || '匿名',
       title: finalTitle,
       content: finalContent,
       category: post.category,
@@ -219,11 +229,18 @@ export function ForumProvider({ children }: { children: ReactNode }) {
     };
     if (post.imageUrl) insertData.image_url = post.imageUrl;
 
-    const { data, error } = await supabase
-      .from('forum_posts')
-      .insert(insertData)
-      .select()
-      .single();
+    // 主插入：带 author_nickname；兼容尚未执行「author_nickname 列」迁移的环境
+    const res = await supabase.from('forum_posts').insert(insertData).select().single();
+    let data: Record<string, unknown> | null = (res.data as Record<string, unknown>) ?? null;
+    let error = res.error;
+
+    if (error && (error.code === '42703' || (error.message || '').includes('author_nickname'))) {
+      const { author_nickname: _omit, ...legacyData } = insertData;
+      void _omit;
+      const retry = await supabase.from('forum_posts').insert(legacyData).select().single();
+      data = (retry.data as Record<string, unknown>) ?? null;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('[明道阁] 发帖失败详情:', JSON.stringify(error, null, 2));

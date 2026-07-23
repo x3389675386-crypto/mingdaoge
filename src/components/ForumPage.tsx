@@ -25,7 +25,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ForumIcon from '@mui/icons-material/Forum';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PersonIcon from '@mui/icons-material/Person';
 import CommentIcon from '@mui/icons-material/Comment';
 import ImageIcon from '@mui/icons-material/Image';
 import CloseIcon from '@mui/icons-material/Close';
@@ -40,6 +39,7 @@ import Footer from './Footer';
 import PostDetailDialog from './PostDetailDialog';
 import PrivateChatButton from './PrivateChatButton';
 import PostGongfaDialog from './PostGongfaDialog';
+import UserAvatar from './UserAvatar';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 /** 分类标签颜色 */
@@ -109,7 +109,6 @@ export default function ForumPage() {
   const [detailPost, setDetailPost] = useState<ForumPost | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [newPost, setNewPost] = useState({
-    author: '',
     title: '',
     content: '',
     category: 'paranormal' as string,
@@ -227,14 +226,14 @@ export default function ForumPage() {
         }
 
         await addPost({
-          author: profile?.nickname?.trim() || newPost.author.trim() || '匿名道友',
+          author: profile?.nickname?.trim() || '匿名道友',
           title: newPost.title.trim(),
           content: newPost.content.trim(),
           category: newPost.category,
           imageUrl,
         });
         setDialogOpen(false);
-        setNewPost({ author: '', title: '', content: '', category: defaultCategory, imageFile: null, imagePreview: null });
+        setNewPost({ title: '', content: '', category: defaultCategory, imageFile: null, imagePreview: null });
         setTitleError(false);
         setContentError(false);
         if (forumWarning) {
@@ -488,9 +487,11 @@ export default function ForumPage() {
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1.5, flexWrap: 'wrap', rowGap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <PersonIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.4)' }} />
-                        <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.5)', fontSize: '0.8rem' }}>{post.author}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                        <UserAvatar name={post.author_nickname || post.author} size={24} />
+                        <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.6)', fontSize: '0.8rem' }}>
+                          {post.author_nickname || post.author}
+                        </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <AccessTimeIcon sx={{ fontSize: '0.85rem', color: 'rgba(201,169,110,0.3)' }} />
@@ -545,12 +546,21 @@ export default function ForumPage() {
             </Fab>
           </Tooltip>
         )}
-        <Fab
-          onClick={() => { setNewPost((p) => ({ ...p, category: defaultCategory })); setDialogOpen(true); }}
-          sx={{ backgroundColor: '#c9a96e', color: '#1a1a2e', '&:hover': { backgroundColor: '#b8975c' } }}
-        >
-          <AddIcon />
-        </Fab>
+        <Tooltip title={isAuthenticated ? '发表新帖' : '登录后发帖'}>
+          <Fab
+            onClick={() => {
+              if (!isAuthenticated) {
+                navigate('/login');
+                return;
+              }
+              setNewPost((p) => ({ ...p, category: defaultCategory }));
+              setDialogOpen(true);
+            }}
+            sx={{ backgroundColor: '#c9a96e', color: '#1a1a2e', '&:hover': { backgroundColor: '#b8975c' } }}
+          >
+            <AddIcon />
+          </Fab>
+        </Tooltip>
       </Box>
 
       {/* 发帖弹窗 */}
@@ -558,7 +568,7 @@ export default function ForumPage() {
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);
-          setNewPost({ author: '', title: '', content: '', category: defaultCategory, imageFile: null, imagePreview: null });
+          setNewPost({ title: '', content: '', category: defaultCategory, imageFile: null, imagePreview: null });
         }}
         maxWidth="sm"
         fullWidth
@@ -569,23 +579,15 @@ export default function ForumPage() {
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="昵称（选填）"
-                value={newPost.author}
-                onChange={(e) => setNewPost((prev) => ({ ...prev, author: e.target.value }))}
-                placeholder="匿名道友"
-                fullWidth
-                sx={fieldSx}
-              />
-              <TextField
-                select
-                label="分类"
-                value={newPost.category}
-                onChange={(e) => setNewPost((prev) => ({ ...prev, category: e.target.value }))}
-                fullWidth
-                sx={fieldSx}
-              >
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              select
+              label="分类"
+              value={newPost.category}
+              onChange={(e) => setNewPost((prev) => ({ ...prev, category: e.target.value }))}
+              fullWidth
+              sx={fieldSx}
+            >
                 {activeCategories.filter((c) => c.value !== 'gongfa').map((cat) => (
                   <MenuItem key={cat.value} value={cat.value} sx={{ fontFamily: 'var(--font-serif)' }}>
                     {cat.icon} {cat.label}

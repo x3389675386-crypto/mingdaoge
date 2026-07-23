@@ -107,8 +107,10 @@ export type MessageAction =
 export interface ForumPost {
   /** 帖子唯一ID */
   id: number;
-  /** 作者昵称 */
+  /** 作者昵称（历史字段，已被 author_nickname 取代为展示字段） */
   author: string;
+  /** 作者昵称（展示统一用此字段，与 author 同源，优先读取） */
+  author_nickname?: string;
   /** 帖子标题 */
   title: string;
   /** 帖子内容 */

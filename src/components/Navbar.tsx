@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip, Box, Button } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Badge, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Tooltip, Box, Avatar } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,10 +12,11 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { CloudPattern } from './ChinesePattern';
+import UserAvatar from './UserAvatar';
 import { ADMIN_GUEST_ID, ADMIN_NAME } from '../lib/chatConstants';
 import { getIdentityLabel } from '../lib/identities';
 
-/** 导航链接列表 */
+/** 导航链接列表（登录 / 注册 统一收到右上角用户图标入口） */
 const navLinks = [
   { label: '首页', href: '#hero', sectionId: 'hero' },
   { label: '产品', href: '#products', sectionId: 'products' },
@@ -24,8 +26,6 @@ const navLinks = [
   { label: '任务大厅', href: '/tasks', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },
   { label: '联系', href: '#footer', sectionId: 'footer' },
-  { label: '登录', href: '/login', isRoute: true },
-  { label: '注册', href: '/register', isRoute: true },
 ];
 
 export default function Navbar() {
@@ -96,7 +96,7 @@ export default function Navbar() {
           borderBottom: '1px solid rgba(201, 169, 110, 0.1)',
         }}
       >
-        <Toolbar className="max-w-7xl mx-auto w-full px-4 md:px-8">
+        <Toolbar className="max-w-7xl mx-auto w-full px-5 md:px-10">
           {/* 品牌 Logo */}
           <a
             href="#hero"
@@ -109,14 +109,14 @@ export default function Navbar() {
             >
               明道阁
             </span>
-            <span className="hidden sm:inline text-xs text-gold/50 tracking-widest mt-1">
+            <span className="hidden lg:inline text-xs text-gold/50 tracking-widest mt-1">
               · 新中式手串
             </span>
           </a>
 
           {/* 桌面端导航链接 */}
           {!isMobile && (
-            <nav className="flex-1 flex justify-center gap-8">
+            <nav className="flex-1 flex justify-center gap-7 md:gap-9">
               {displayLinks.map((link) => (
                 <a
                   key={link.href}
@@ -177,80 +177,45 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
-            {/* 管理入口（隐蔽小图标） */}
-            <Tooltip title="管理">
-              <IconButton
-                onClick={() => navigate('/admin')}
-                sx={{ color: 'rgba(201,169,110,0.25)', '&:hover': { color: 'rgba(201,169,110,0.5)' } }}
-                aria-label="管理后台"
-                size="small"
-              >
-                <SettingsIcon sx={{ fontSize: '1rem' }} />
-              </IconButton>
-            </Tooltip>
+            {/* 管理入口（隐蔽小图标，桌面端显示；移动端在抽屉中已有入口） */}
+            {!isMobile && (
+              <Tooltip title="管理">
+                <IconButton
+                  onClick={() => navigate('/admin')}
+                  sx={{ color: 'rgba(201,169,110,0.25)', '&:hover': { color: 'rgba(201,169,110,0.5)' } }}
+                  aria-label="管理后台"
+                  size="small"
+                >
+                  <SettingsIcon sx={{ fontSize: '1rem' }} />
+                </IconButton>
+              </Tooltip>
+            )}
 
-            {/* 已登录用户：身份 + 余额 + 退出（移动端已在右侧抽屉中完整呈现，顶部仅桌面端显示以免溢出） */}
-            {isAuthenticated && profile && !isMobile && (
-              <Box className="flex items-center gap-2 ml-1">
-                <Box className="flex flex-col items-end leading-tight">
-                  <Box className="flex items-center gap-1.5">
-                    <Tooltip title="个人中心">
-                      <Box
-                        component="span"
-                        onClick={() => navigate('/profile')}
-                        sx={{
-                          fontFamily: 'var(--font-serif)',
-                          color: 'rgba(245,240,235,0.9)',
-                          fontSize: '0.875rem',
-                          cursor: 'pointer',
-                          transition: 'color 0.2s',
-                          '&:hover': { color: '#c9a96e' },
-                        }}
-                      >
-                        {displayName}
-                      </Box>
-                    </Tooltip>
-                    {identityLabel && (
-                      <span className="text-[0.65rem] px-1.5 py-px rounded-full bg-gold/15 text-gold border border-gold/30">
-                        {identityLabel}
-                      </span>
-                    )}
-                  </Box>
-                  <span className="text-[0.7rem] text-jade-white/55 tracking-wide">
-                    阳德 {profile.yang_de} · 积分 {profile.points}
-                    {profile.user_code ? ` · ${profile.user_code}` : ''}
-                  </span>
-                </Box>
-                {/* 后台管理入口（仅管理员可见，金色风格，与「个人中心」并列） */}
-                {isAdmin && (
-                  <Button
-                    onClick={() => navigate('/admin')}
-                    size="small"
+            {/* 用户入口：单个图标按钮（已登录显示金色头像首字，未登录显示 Person 图标）。
+                点击进入个人中心 /profile，未登录时该页引导去登录。移动端常驻。 */}
+            <Tooltip title={isAuthenticated ? (profile?.nickname || '个人中心') : '登录 / 注册'}>
+              <IconButton
+                onClick={() => navigate('/profile')}
+                sx={{ p: 0.5, ml: 0.5 }}
+                aria-label="个人中心"
+              >
+                {isAuthenticated && profile?.nickname ? (
+                  <UserAvatar name={profile.nickname} size={32} />
+                ) : (
+                  <Avatar
                     sx={{
-                      color: '#c9a96e',
-                      fontFamily: 'var(--font-serif)',
-                      textTransform: 'none',
-                      ml: 0.5,
-                      '&:hover': { color: '#b8975c' },
+                      width: 32,
+                      height: 32,
+                      bgcolor: 'rgba(201,169,110,0.15)',
+                      color: 'rgba(201,169,110,0.85)',
+                      border: '1px solid rgba(201,169,110,0.3)',
                     }}
                   >
-                    后台管理
-                  </Button>
+                    <PersonIcon sx={{ fontSize: '1.2rem' }} />
+                  </Avatar>
                 )}
-                <Button
-                  onClick={handleLogout}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    color: '#c9a96e',
-                    borderColor: 'rgba(201,169,110,0.4)',
-                    '&:hover': { borderColor: '#c9a96e' },
-                  }}
-                >
-                  退出
-                </Button>
-              </Box>
-            )}
+              </IconButton>
+            </Tooltip>
 
             {/* 购物车图标 */}
             <IconButton

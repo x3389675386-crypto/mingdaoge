@@ -17,9 +17,12 @@ import {
   FormControl,
   InputLabel,
   Chip,
+  Container,
+  Divider,
 } from '@mui/material';
 import Navbar from '../components/Navbar';
 import CheckinCard from '../components/CheckinCard';
+import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { IDENTITY_GROUPS, getIdentityLabel } from '../lib/identities';
 import { authFieldSx, authButtonSx } from './authStyles';
@@ -32,8 +35,14 @@ interface Feedback {
 }
 
 export default function Profile() {
-  const { isAuthenticated, profile, user, updateNickname, updateIdentity, updatePassword } = useAuth();
+  const { isAuthenticated, profile, user, signOut, updateNickname, updateIdentity, updatePassword } = useAuth();
   const navigate = useNavigate();
+
+  /** 退出登录 */
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const [nickname, setNickname] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -141,27 +150,49 @@ export default function Profile() {
     return (
       <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
         <Navbar />
-        <Box
-          sx={{
-            minHeight: 'calc(100vh - 64px)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 3,
-          }}
-        >
-          <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '1.3rem' }}>
-            请先登录
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/login')}
-            sx={{ ...authButtonSx, width: 200 }}
+        <Container maxWidth="sm" sx={{ py: { xs: 8, md: 12 } }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 4, md: 6 },
+              textAlign: 'center',
+              borderRadius: '4px',
+              backgroundColor: 'rgba(22,33,62,0.85)',
+              border: '1px solid rgba(201,169,110,0.15)',
+            }}
           >
-            去登录
-          </Button>
-        </Box>
+            <UserAvatar name="?" size={72} />
+            <Typography
+              sx={{
+                fontFamily: 'var(--font-calligraphy)',
+                color: '#c9a96e',
+                fontSize: '1.6rem',
+                mt: 2,
+                mb: 1,
+              }}
+            >
+              个人中心
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'var(--font-serif)',
+                color: 'rgba(245,240,235,0.6)',
+                fontSize: '0.9rem',
+                lineHeight: 1.8,
+                mb: 4,
+              }}
+            >
+              登录后查看你的修行档案，管理昵称与身份，记录阳德与积分。
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/login')}
+              sx={{ ...authButtonSx, width: 200 }}
+            >
+              去登录
+            </Button>
+          </Paper>
+        </Container>
       </Box>
     );
   }
@@ -174,40 +205,78 @@ export default function Profile() {
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
       <Navbar />
-      <Box sx={{ display: 'flex', justifyContent: 'center', px: 2, py: 6 }}>
+      <Container maxWidth="md" sx={{ py: { xs: 6, md: 9 } }}>
         <Paper
           elevation={0}
           sx={{
-            width: 520,
             maxWidth: '100%',
-            p: { xs: 3, md: 5 },
+            p: { xs: 3, md: 6 },
             borderRadius: '4px',
             backgroundColor: 'rgba(22,33,62,0.85)',
             border: '1px solid rgba(201,169,110,0.15)',
           }}
         >
-          <Typography
-            sx={{
-              fontFamily: 'var(--font-calligraphy)',
-              color: '#c9a96e',
-              fontSize: '1.8rem',
-              textAlign: 'center',
-              mb: 0.5,
-            }}
-          >
-            个人中心
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: 'var(--font-serif)',
-              color: 'rgba(245,240,235,0.45)',
-              fontSize: '0.82rem',
-              textAlign: 'center',
-              mb: 3,
-            }}
-          >
-            {user?.email ?? ''}
-          </Typography>
+          {/* 个人中心头部：大头像 + 昵称 + 身份 / 阳德 / 积分概览 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', mb: 1 }}>
+            <UserAvatar name={profile.nickname} size={80} />
+            <Box sx={{ flex: 1, minWidth: 200 }}>
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-serif)',
+                  color: '#f5f0eb',
+                  fontSize: { xs: '1.5rem', md: '1.8rem' },
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                }}
+              >
+                {profile.nickname}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-serif)',
+                  color: 'rgba(245,240,235,0.45)',
+                  fontSize: '0.82rem',
+                  mt: 0.5,
+                }}
+              >
+                {user?.email ?? ''}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, flexWrap: 'wrap' }}>
+                {identityLabel && (
+                  <Chip
+                    label={identityLabel}
+                    size="small"
+                    sx={{
+                      backgroundColor: 'rgba(201,169,110,0.15)',
+                      color: '#c9a96e',
+                      fontFamily: 'var(--font-serif)',
+                      border: '1px solid rgba(201,169,110,0.3)',
+                    }}
+                  />
+                )}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <InfoBadge label="阳德" value={String(profile.yang_de)} />
+                  <InfoBadge label="积分" value={String(profile.points)} />
+                </Box>
+              </Box>
+            </Box>
+            <Button
+              onClick={handleLogout}
+              size="small"
+              variant="outlined"
+              sx={{
+                color: '#c9a96e',
+                borderColor: 'rgba(201,169,110,0.4)',
+                fontFamily: 'var(--font-serif)',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
+              }}
+            >
+              退出登录
+            </Button>
+          </Box>
+
+          <Divider sx={{ borderColor: 'rgba(201,169,110,0.12)', my: 3 }} />
 
           {/* 每日签到卡片 */}
           <CheckinCard />
@@ -223,38 +292,9 @@ export default function Profile() {
             </Alert>
           )}
 
-          {/* 基本信息展示 */}
-          <Box
-            sx={{
-              p: 2.5,
-              mb: 3,
-              borderRadius: '4px',
-              backgroundColor: 'rgba(26,26,46,0.4)',
-              border: '1px solid rgba(201,169,110,0.1)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
-              <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '1.2rem', fontWeight: 600 }}>
-                {profile.nickname}
-              </Typography>
-              {identityLabel && (
-                <Chip
-                  label={identityLabel}
-                  size="small"
-                  sx={{
-                    backgroundColor: 'rgba(201,169,110,0.15)',
-                    color: '#c9a96e',
-                    fontFamily: 'var(--font-serif)',
-                    border: '1px solid rgba(201,169,110,0.3)',
-                  }}
-                />
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-              <InfoBadge label="道友编号" value={profile.user_code ?? '—'} />
-              <InfoBadge label="阳德" value={String(profile.yang_de)} />
-              <InfoBadge label="积分" value={String(profile.points)} />
-            </Box>
+          {/* 道友编号（其余概览已置于头部） */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
+            <InfoBadge label="道友编号" value={profile.user_code ?? '—'} />
           </Box>
 
           {/* 修改昵称 */}
@@ -379,7 +419,7 @@ export default function Profile() {
             </Button>
           </Section>
         </Paper>
-      </Box>
+      </Container>
     </Box>
   );
 }

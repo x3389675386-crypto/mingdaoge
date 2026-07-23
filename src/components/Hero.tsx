@@ -77,7 +77,7 @@ export default function Hero() {
         <p className="text-jade-white/70 text-base md:text-lg mb-2 tracking-widest" style={{ fontFamily: 'var(--font-serif)' }}>
           一念一珠 · 串起山河万象
         </p>
-        <p className="text-jade-white/40 text-sm md:text-base mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-serif)' }}>
+        <p className="text-jade-white/40 text-sm md:text-base mb-12 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-serif)' }}>
           一串一世界，一法一修行。明道阁以手作珠串承东方之美，更以道法修行聚同道之人。
         </p>
 
@@ -87,7 +87,7 @@ export default function Hero() {
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            gap: { xs: 1.5, sm: 2 },
+            gap: { xs: 2, sm: 2.5 },
             px: { xs: 1, sm: 0 },
           }}
         >

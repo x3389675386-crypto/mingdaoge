@@ -12,7 +12,6 @@ import {
   Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import PersonIcon from '@mui/icons-material/Person';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SendIcon from '@mui/icons-material/Send';
@@ -24,6 +23,7 @@ import { useComments } from '../context/CommentContext';
 import { useForum } from '../context/ForumContext';
 import { useAuth } from '../context/AuthContext';
 import PrivateChatButton from './PrivateChatButton';
+import UserAvatar from './UserAvatar';
 import DownloadIcon from '@mui/icons-material/Download';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 
@@ -49,7 +49,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
   const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
   const { likePost, posts: forumPosts, gongfaMaterials, hasLiked } = useForum();
   const { isAuthenticated, profile } = useAuth();
-  const [newComment, setNewComment] = useState({ author: '', content: '' });
+  const [newComment, setNewComment] = useState({ content: '' });
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState('');
 
@@ -88,10 +88,10 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
       setCommentError('');
       await addComment({
         postId: post.id,
-        author: profile?.nickname?.trim() || newComment.author.trim() || '匿名道友',
+        author: profile?.nickname?.trim() || '匿名道友',
         content: newComment.content.trim(),
       });
-      setNewComment({ author: '', content: '' });
+      setNewComment({ content: '' });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '评论失败，请重试';
       setCommentError(msg);
@@ -101,7 +101,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
   };
 
   const handleClose = () => {
-    setNewComment({ author: '', content: '' });
+    setNewComment({ content: '' });
     setCommentError('');
     onClose();
   };
@@ -183,10 +183,10 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
       <DialogContent sx={{ pt: 0 }}>
         {/* 作者 & 时间 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <PersonIcon sx={{ fontSize: '0.9rem', color: 'rgba(201,169,110,0.5)' }} />
-            <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.6)', fontSize: '0.85rem' }}>
-              {post.author}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <UserAvatar name={post.author_nickname || post.author} size={28} />
+            <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.7)', fontSize: '0.9rem', fontWeight: 600 }}>
+              {post.author_nickname || post.author}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -345,8 +345,8 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <PersonIcon sx={{ fontSize: '0.8rem', color: 'rgba(201,169,110,0.4)' }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <UserAvatar name={comment.author} size={22} />
                     <Typography
                       sx={{
                         fontFamily: 'var(--font-serif)',
@@ -428,29 +428,8 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
               {commentError}
             </Typography>
           )}
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-            <TextField
-              label="昵称"
-              value={newComment.author}
-              onChange={(e) => setNewComment((prev) => ({ ...prev, author: e.target.value }))}
-              placeholder="匿名道友"
-              size="small"
-              sx={{
-                width: 140,
-                '& .MuiOutlinedInput-root': {
-                  fontFamily: 'var(--font-serif)',
-                  color: '#f5f0eb',
-                  fontSize: '0.85rem',
-                  '& fieldset': { borderColor: 'rgba(201,169,110,0.2)' },
-                  '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.4)' },
-                },
-                '& .MuiInputLabel-root': {
-                  fontFamily: 'var(--font-serif)',
-                  color: 'rgba(245,240,235,0.5)',
-                  fontSize: '0.85rem',
-                },
-              }}
-            />
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}>
+            <UserAvatar name={profile?.nickname || '我'} size={32} />
             <TextField
               label="评论内容"
               value={newComment.content}

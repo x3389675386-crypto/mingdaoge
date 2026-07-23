@@ -1,17 +1,30 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, Typography, IconButton, Chip } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
-import { announcements } from '../data/announcements';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { announcements as staticAnnouncements } from '../data/announcements';
 
-/** localStorage 中记录已「不再显示」的公告 ID 列表 */
+/** 公告条目结构（静态与 Supabase 返回字段对齐） */
+interface AnnouncementItem {
+  id: string;
+  tag: string;
+  title: string;
+  content: string;
+}
+
+/**
+ * 「不再显示」持久化键。
+ * 注意：此前误用 localStorage —— 点一次就永久消失（根因：公告看不见）。
+ * 现改为 sessionStorage：刷新页面公告会恢复显示，关闭标签页才清空。
+ */
 const DISMISSED_KEY = 'mdg_dismissed_announcements';
 
-/** 读取已关闭的公告 ID 集合 */
+/** 读取已关闭的公告 ID 集合（会话级） */
 function loadDismissed(): Set<string> {
   try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
+    const raw = sessionStorage.getItem(DISMISSED_KEY);
     if (!raw) return new Set();
     const ids = JSON.parse(raw) as string[];
     return new Set(Array.isArray(ids) ? ids : []);
@@ -20,22 +33,54 @@ function loadDismissed(): Set<string> {
   }
 }
 
-/** 写入已关闭的公告 ID 集合 */
+/** 写入已关闭的公告 ID 集合（会话级） */
 function saveDismissed(ids: Set<string>): void {
   try {
-    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...ids]));
+    sessionStorage.setItem(DISMISSED_KEY, JSON.stringify([...ids]));
   } catch {
-    /* localStorage 不可用时静默降级，仅当前会话内隐藏 */
+    /* sessionStorage 不可用时静默降级，仅当前会话内隐藏 */
   }
 }
 
 /** 首页顶部可关闭公告条（暗金风格，仅首页挂载） */
 export default function AnnouncementBar() {
-  const all = announcements;
+  // 初始先用静态数据兜底，避免首屏空白；Supabase 就绪后替换
+  const [remoteAnnouncements, setRemoteAnnouncements] = useState<AnnouncementItem[] | null>(null);
 
-  // 已关闭集合（会话内可变），初始从 localStorage 读取
+  // 已关闭集合（会话内可变），初始从 sessionStorage 读取
   const [dismissed, setDismissed] = useState<Set<string>>(loadDismissed);
   const [index, setIndex] = useState(0);
+
+  /** 拉取后台公告（已上架、按排序），失败则回退静态数据 */
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let active = true;
+    supabase
+      .from('announcements')
+      .select('*')
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error('[明道阁] 加载公告失败，回退静态数据:', error);
+          return;
+        }
+        const rows = (data || []) as Array<{ id: string; tag: string; title: string; content: string }>;
+        if (rows.length > 0) {
+          setRemoteAnnouncements(
+            rows.map((r) => ({ id: r.id, tag: r.tag, title: r.title, content: r.content }))
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // 数据源：优先后台公告，未配置或加载失败回退静态
+  const all: AnnouncementItem[] =
+    remoteAnnouncements && remoteAnnouncements.length > 0 ? remoteAnnouncements : staticAnnouncements;
 
   /** 仍可见的公告列表（过滤掉已「不再显示」的） */
   const visible = useMemo(
@@ -93,11 +138,11 @@ export default function AnnouncementBar() {
           maxWidth: 1200,
           mx: 'auto',
           px: { xs: 2, md: 4 },
-          py: 1.2,
+          py: 1.4,
           display: 'flex',
           alignItems: 'center',
           gap: 1.5,
-          minHeight: 44,
+          minHeight: 46,
         }}
       >
         {/* 左切换（多条时显示） */}

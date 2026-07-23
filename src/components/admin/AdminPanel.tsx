@@ -13,6 +13,7 @@ import RewardPanel from './RewardPanel';
 import GongfaPanel from './GongfaPanel';
 import CategoryPanel from './CategoryPanel';
 import AdminTaskPanel from './AdminTaskPanel';
+import AnnouncementPanel from './AnnouncementPanel';
 import { GreekKeyBorder } from '../ChinesePattern';
 import { useMessages } from '../../context/MessageContext';
 import { useChat } from '../../context/ChatContext';
@@ -200,6 +201,7 @@ function AdminPanelInner() {
           }
         />
         <Tab label="任务管理" />
+        <Tab label="公告管理" />
       </Tabs>
 
       <TabPanel value={tabValue} index={0}>
@@ -231,6 +233,9 @@ function AdminPanelInner() {
       </TabPanel>
       <TabPanel value={tabValue} index={9}>
         <AdminTaskPanel />
+      </TabPanel>
+      <TabPanel value={tabValue} index={10}>
+        <AnnouncementPanel />
       </TabPanel>
 
       {/* 底部提示 */}

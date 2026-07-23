@@ -3,7 +3,7 @@ import { GoldDivider, CloudPattern, GreekKeyBorder } from './ChinesePattern';
 
 export default function About() {
   return (
-    <section id="about" className="relative py-12 px-4 md:px-8 overflow-hidden">
+    <section id="about" className="relative py-16 md:py-24 px-4 md:px-8 overflow-hidden">
       {/* 背景装饰 */}
       <CloudPattern className="absolute top-8 right-8 opacity-20 scale-75" />
       <CloudPattern className="absolute bottom-16 left-4 opacity-15 scale-50" />
@@ -95,8 +95,8 @@ export default function About() {
                 key={item.title}
                 sx={{
                   display: 'flex',
-                  gap: 2,
-                  padding: '16px',
+                  gap: 2.5,
+                  padding: '20px',
                   borderRadius: '4px',
                   border: '1px solid rgba(201,169,110,0.08)',
                   backgroundColor: 'rgba(22,33,62,0.4)',
