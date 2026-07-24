@@ -138,7 +138,7 @@ export interface ForumPost {
  */
 export const FORUM_CATEGORIES = [
   { value: 'paranormal', label: '灵异事件大全', icon: '👻' },
-  { value: 'handcraft', label: '手串手作', icon: '📿' },
+  { value: 'handcraft', label: '匠心好物', icon: '🪷' },
   { value: 'culture', label: '国风文化', icon: '🏯' },
   { value: 'chat', label: '闲聊灌水', icon: '💬' },
   { value: 'gongfa', label: '功法', icon: '📜' },
