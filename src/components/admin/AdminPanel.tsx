@@ -261,7 +261,7 @@ function AdminPanelInner() {
   const { unreadTotal } = useChat();
 
   return (
-    <div className="min-h-screen pt-20 pb-16 px-4 md:px-8 max-w-5xl mx-auto">
+    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-5xl mx-auto">
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -312,7 +312,7 @@ function AdminPanelInner() {
         onChange={(_, val) => setTabValue(val)}
         sx={{
           borderBottom: '1px solid rgba(201,169,110,0.1)',
-          mb: 2,
+          mb: 3,
           '& .MuiTab-root': {
             fontFamily: 'var(--font-serif)',
             color: 'rgba(201,169,110,0.5)',

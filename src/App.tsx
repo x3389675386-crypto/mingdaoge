@@ -67,7 +67,30 @@ const darkTheme = createTheme({
   typography: {
     fontFamily: '"Noto Serif SC", serif',
   },
-  shape: { borderRadius: 2 },
+  // 放宽全局圆角，让卡片 / 按钮更舒展（暗金视觉不变）
+  shape: { borderRadius: 10 },
+  components: {
+    // 统一按钮密度：更高 minHeight + 更舒展内边距，移动端也好点
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 600,
+          padding: '10px 22px',
+          minHeight: 44,
+          letterSpacing: '0.04em',
+        },
+        sizeSmall: {
+          padding: '7px 16px',
+          minHeight: 36,
+        },
+      },
+    },
+    MuiCard: { styleOverrides: { root: { borderRadius: 12 } } },
+    MuiPaper: { styleOverrides: { root: { borderRadius: 12 } } },
+  },
 });
 
 /** 前台页面内容 */

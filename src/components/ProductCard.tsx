@@ -35,7 +35,7 @@ export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: P
       sx={{
         backgroundColor: 'rgba(22, 33, 62, 0.6)',
         border: '1px solid rgba(201,169,110,0.1)',
-        borderRadius: '4px',
+        borderRadius: '12px',
         overflow: 'hidden',
         transition: 'all 0.4s ease',
         '&:hover': {
@@ -106,7 +106,7 @@ export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: P
         />
       </Box>
 
-      <CardContent sx={{ padding: '16px 16px 8px' }}>
+      <CardContent sx={{ padding: '20px 20px 10px' }}>
         {/* 产品名 */}
         <Typography
           className="cursor-pointer hover:text-gold transition-colors"
@@ -147,7 +147,7 @@ export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: P
         </Typography>
       </CardContent>
 
-      <CardActions sx={{ padding: '8px 16px 16px', gap: 1 }}>
+      <CardActions sx={{ padding: '12px 20px 20px', gap: 1.5 }}>
         <Button
           size="small"
           startIcon={<AddShoppingCartIcon />}
@@ -157,7 +157,7 @@ export default function ProductCard({ product, onDetail, onAddToCart, onBuy }: P
             color: '#c9a96e',
             fontFamily: 'var(--font-serif)',
             fontSize: '0.8rem',
-            borderRadius: '2px',
+            borderRadius: '8px',
             '&:hover': {
               borderColor: '#c9a96e',
               backgroundColor: 'rgba(201,169,110,0.08)',

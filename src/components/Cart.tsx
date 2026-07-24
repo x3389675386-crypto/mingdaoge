@@ -28,7 +28,7 @@ export default function Cart() {
         }}
       >
         {/* 标题栏 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gold/10">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gold/10">
           <div className="flex items-center gap-2">
             <ShoppingBagIcon sx={{ color: '#c9a96e', fontSize: '1.2rem' }} />
             <Typography
@@ -56,18 +56,18 @@ export default function Cart() {
               购物车空空如也
             </Typography>
             <Typography sx={{ fontFamily: 'var(--font-serif)', fontSize: '0.8rem', mt: 0.5, opacity: 0.5 }}>
-              去挑选一串心仪的手串吧
+              去挑选一件心仪好物吧
             </Typography>
           </div>
         ) : (
           <>
             {/* 商品列表 */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {state.items.map((item) => {
                 const product = getProduct(item.productId);
                 return (
                 <div key={item.productId}>
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     {/* 产品缩略图 */}
                     {product?.imageUrl ? (
                       <Box
@@ -198,7 +198,7 @@ export default function Cart() {
             </div>
 
             {/* 底部结算区 */}
-            <div className="border-t border-gold/10 px-5 py-4">
+            <div className="border-t border-gold/10 px-6 py-5">
               <div className="flex justify-between items-center mb-3">
                 <Typography
                   sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.9rem' }}
@@ -222,7 +222,7 @@ export default function Cart() {
                   fontSize: '0.95rem',
                   letterSpacing: '0.15em',
                   padding: '10px 0',
-                  borderRadius: '2px',
+                  borderRadius: '8px',
                   mb: 1.5,
                   '&:hover': { backgroundColor: '#c0392b' },
                 }}

@@ -75,7 +75,7 @@ function TaskCard({
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: 4,
         borderRadius: '4px',
         backgroundColor: 'rgba(22, 33, 62, 0.6)',
         border: '1px solid rgba(201,169,110,0.12)',
@@ -241,7 +241,7 @@ export default function TaskHall() {
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'center', px: 2, py: 6 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', px: 2, py: 8 }}>
         <Box sx={{ width: 960, maxWidth: '100%' }}>
           {/* 标题栏 */}
           <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -274,7 +274,7 @@ export default function TaskHall() {
                   color: '#c9a96e',
                   borderColor: 'rgba(201,169,110,0.4)',
                   fontFamily: 'var(--font-serif)',
-                  borderRadius: '2px',
+                  borderRadius: '8px',
                   '&:hover': { borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.08)' },
                 }}
               >
@@ -293,7 +293,7 @@ export default function TaskHall() {
               sx={{
                 p: 6,
                 textAlign: 'center',
-                borderRadius: '4px',
+                borderRadius: '12px',
                 backgroundColor: 'rgba(22,33,62,0.4)',
                 border: '1px solid rgba(201,169,110,0.1)',
               }}
@@ -308,7 +308,7 @@ export default function TaskHall() {
               sx={{
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-                gap: 3,
+                gap: 4,
               }}
             >
               {tasks.map((task) => (

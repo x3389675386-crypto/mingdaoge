@@ -13,8 +13,8 @@ export default function Footer() {
     <footer id="footer" className="relative border-t border-gold/10">
       <GreekKeyBorder />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-20">
           {/* 品牌 */}
           <div>
             <Typography
@@ -36,7 +36,7 @@ export default function Footer() {
                 mb: 2,
               }}
             >
-              新中式 · 手工定制
+              明道阁 · 匠心手作
             </Typography>
             <Typography
               sx={{
@@ -169,7 +169,7 @@ export default function Footer() {
               letterSpacing: '0.1em',
             }}
           >
-            © 2025 明道阁 · 新中式手串 · 保留所有权利
+            © 2025 明道阁 · 保留所有权利
           </Typography>
         </div>
       </div>

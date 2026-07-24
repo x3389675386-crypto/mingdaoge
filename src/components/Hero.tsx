@@ -16,9 +16,9 @@ export default function Hero() {
     color: '#c8a45c',
     fontFamily: 'var(--font-serif)',
     letterSpacing: '0.2em',
-    padding: { xs: '8px 20px', sm: '10px 36px' },
-    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-    borderRadius: '2px',
+    padding: { xs: '11px 26px', sm: '13px 46px' },
+    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+    borderRadius: '8px',
     '&:hover': {
       borderColor: '#c8a45c',
       backgroundColor: 'rgba(200,164,92,0.08)',
@@ -55,7 +55,7 @@ export default function Hero() {
       <div className="relative z-10 text-center px-4 animate-fade-in-up">
         {/* 副标题 */}
         <p className="text-gold/60 tracking-[0.4em] text-xs md:text-sm mb-4 uppercase">
-          手串 · 道法 · 同修
+          器物 · 道法 · 同修
         </p>
 
         {/* 主标题 */}
@@ -87,12 +87,12 @@ export default function Hero() {
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            gap: { xs: 2, sm: 2.5 },
+            gap: { xs: 2.5, sm: 3 },
             px: { xs: 1, sm: 0 },
           }}
         >
           <Button onClick={scrollToProducts} variant="outlined" sx={ctaButtonSx}>
-            品鉴手串
+            结缘好物
           </Button>
           <Button onClick={() => navigate('/forum?cat=gongfa')} variant="outlined" sx={ctaButtonSx}>
             修行道法

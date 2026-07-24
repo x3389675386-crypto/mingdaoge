@@ -27,7 +27,7 @@ export const authButtonSx: SxProps<Theme> = {
   color: '#1a1a2e',
   fontFamily: 'var(--font-serif)',
   fontWeight: 600,
-  py: 1,
+  py: 1.25,
   mt: 1,
   '&:hover': { backgroundColor: '#c9a96e' },
   '&.Mui-disabled': {

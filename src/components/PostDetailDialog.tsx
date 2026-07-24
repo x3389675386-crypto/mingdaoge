@@ -148,7 +148,7 @@ useEffect(() => {
         '& .MuiDialog-paper': {
           backgroundColor: '#16213e',
           border: '1px solid rgba(201,169,110,0.15)',
-          borderRadius: '4px',
+          borderRadius: '12px',
           maxHeight: '90vh',
         },
       }}
@@ -232,7 +232,7 @@ useEffect(() => {
               gap: 0.5,
               background: 'rgba(201,169,110,0.06)',
               border: '1px solid rgba(201,169,110,0.15)',
-              borderRadius: '4px',
+              borderRadius: '12px',
               cursor: liked ? 'default' : 'pointer',
               padding: '2px 10px',
               ml: 'auto',
@@ -263,7 +263,7 @@ useEffect(() => {
               width: '100%',
               maxHeight: 400,
               objectFit: 'contain',
-              borderRadius: '4px',
+              borderRadius: '12px',
               mb: 2,
             }}
           />
@@ -313,7 +313,7 @@ useEffect(() => {
                       color: '#f5f0eb',
                       fontFamily: 'var(--font-serif)',
                       border: '1px solid rgba(201,169,110,0.2)',
-                      borderRadius: '4px',
+                      borderRadius: '12px',
                       px: 2,
                       py: 1,
                       '&:hover': { borderColor: 'rgba(201,169,110,0.5)', backgroundColor: 'rgba(201,169,110,0.08)' },
@@ -365,7 +365,7 @@ useEffect(() => {
                 sx={{
                   backgroundColor: 'rgba(26,26,46,0.4)',
                   border: '1px solid rgba(201,169,110,0.06)',
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   p: 1.5,
                 }}
               >
@@ -424,7 +424,7 @@ useEffect(() => {
           sx={{
             backgroundColor: 'rgba(26,26,46,0.3)',
             border: '1px solid rgba(201,169,110,0.08)',
-            borderRadius: '4px',
+            borderRadius: '12px',
             p: 2,
           }}
         >

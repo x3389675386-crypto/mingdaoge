@@ -132,7 +132,7 @@ export default function ExchangePage() {
 
   return (
     <>
-      <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+      <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 4 }, py: 10 }}>
         {/* 抽奖区块（二期新增，置于兑换中心顶部；功能未部署时自动降级提示，不影响其它功能） */}
         <LotteryCard />
 
@@ -173,7 +173,7 @@ export default function ExchangePage() {
           <>
             {/* 阳德兑换：手串 redeem + 现金申请 */}
             {tab === 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {/* 现金提现表单 */}
                 <Card sx={cardSx}>
                   <CardContent>
@@ -220,7 +220,7 @@ export default function ExchangePage() {
                     暂无可兑换的阳德商品
                   </Typography>
                 ) : (
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                     {yangItems.filter((i) => i.item_type !== 'cash').map((item) => (
                       <Card key={item.id} sx={cardSx}>
                         <CardContent>

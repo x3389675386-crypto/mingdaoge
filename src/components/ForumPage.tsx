@@ -334,8 +334,8 @@ export default function ForumPage() {
     <>
       <Box
         sx={{
-          pt: 4,
-          pb: 4,
+          pt: 6,
+          pb: 6,
           px: 2,
           textAlign: 'center',
           background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)',
@@ -391,7 +391,7 @@ export default function ForumPage() {
         </Card>
       </Box>
 
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 6 }}>
         {/* 搜索框（暗金风格，按标题/内容/作者昵称过滤） */}
         <Box sx={{ mb: 3 }}>
           <TextField
@@ -410,7 +410,7 @@ export default function ForumPage() {
               '& .MuiOutlinedInput-root': {
                 fontFamily: 'var(--font-serif)',
                 color: '#f5f0eb',
-                borderRadius: '4px',
+                borderRadius: '12px',
                 backgroundColor: 'rgba(22,33,62,0.5)',
                 '& fieldset': { borderColor: 'rgba(201,169,110,0.25)' },
                 '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.5)' },
@@ -465,7 +465,7 @@ export default function ForumPage() {
               sx={{
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-                gap: 2,
+                gap: 3,
               }}
             >
               {FIXED_TUTORIALS.map((t) => (
@@ -474,7 +474,7 @@ export default function ForumPage() {
                   sx={{
                     backgroundColor: 'rgba(22,33,62,0.4)',
                     border: '1px solid rgba(201,169,110,0.1)',
-                    borderRadius: '4px',
+                    borderRadius: '12px',
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100%',
@@ -567,7 +567,7 @@ export default function ForumPage() {
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {displayPosts.map((post) => {
               const catInfo = getCategoryInfo(post.category);
               const commentCount = commentsByPostId(post.id).length;
@@ -579,7 +579,7 @@ export default function ForumPage() {
                   sx={{
                     backgroundColor: 'rgba(22,33,62,0.4)',
                     border: '1px solid rgba(201,169,110,0.08)',
-                    borderRadius: '4px',
+                    borderRadius: '12px',
                     transition: 'all 0.3s',
                     cursor: 'pointer',
                     '&:hover': { borderColor: 'rgba(201,169,110,0.2)', backgroundColor: 'rgba(22,33,62,0.6)' },

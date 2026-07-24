@@ -117,7 +117,7 @@ export default function Identity() {
 
   return (
     <>
-      <Box sx={{ maxWidth: 1080, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
+      <Box sx={{ maxWidth: 1080, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 6, md: 9 } }}>
         {/* 标题 */}
         <Box sx={{ textAlign: 'center', mb: 1 }}>
           <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: { xs: '2rem', md: '2.6rem' }, color: '#c9a96e' }}>
@@ -179,7 +179,7 @@ export default function Identity() {
         </Card>
 
         {/* 三阶对比卡片 */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
           {TIER_ORDER.map((t) => {
             const info = TIERS[t];
             const isCurrent = t === currentType;
@@ -191,7 +191,7 @@ export default function Identity() {
                 sx={{
                   backgroundColor: isCurrent ? 'rgba(201,169,110,0.1)' : 'rgba(22,33,62,0.4)',
                   border: `1px solid ${isCurrent ? '#c9a96e' : 'rgba(201,169,110,0.12)'}`,
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   position: 'relative',
                   transition: 'all 0.3s',
                   '&:hover': { borderColor: 'rgba(201,169,110,0.4)' },
@@ -247,7 +247,7 @@ export default function Identity() {
           <Button
             variant="contained"
             onClick={() => navigate('/tasks')}
-            sx={{ backgroundColor: 'rgba(201,169,110,0.9)', color: '#1a1a2e', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', px: 4, py: 1.1, '&:hover': { backgroundColor: '#c9a96e' } }}
+            sx={{ backgroundColor: 'rgba(201,169,110,0.9)', color: '#1a1a2e', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', px: 4, py: 1.3, '&:hover': { backgroundColor: '#c9a96e' } }}
           >
             去赚积分，加速晋升 →
           </Button>

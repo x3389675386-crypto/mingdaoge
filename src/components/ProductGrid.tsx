@@ -56,7 +56,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
   }, [category, activeProducts, search, sort]);
 
   return (
-    <section id="products" className="py-12 px-4 md:px-8 max-w-[1200px] mx-auto">
+    <section id="products" className="py-16 px-4 md:px-8 max-w-[1200px] mx-auto">
       {/* 标题 */}
       <div className="text-center mb-12">
         <Typography
@@ -67,7 +67,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
             mb: 1,
           }}
         >
-          匠心手串
+          匠心好物
         </Typography>
         <GoldDivider className="mb-4" />
         <Typography
@@ -83,7 +83,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
       </div>
 
         {/* 搜索 + 排序 工具栏 */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8 justify-between items-stretch sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 mb-10 justify-between items-stretch sm:items-center">
           {/* 搜索输入框 */}
           <TextField
             value={search}
@@ -96,7 +96,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
               '& .MuiOutlinedInput-root': {
                 fontFamily: 'var(--font-serif)',
                 color: '#f5f0eb',
-                borderRadius: '2px',
+                borderRadius: '8px',
                 '& fieldset': { borderColor: 'rgba(201,169,110,0.2)' },
                 '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.4)' },
                 '&.Mui-focused fieldset': { borderColor: '#c9a96e' },
@@ -125,7 +125,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
               '& .MuiOutlinedInput-root': {
                 fontFamily: 'var(--font-serif)',
                 color: '#f5f0eb',
-                borderRadius: '2px',
+                borderRadius: '8px',
                 '& fieldset': { borderColor: 'rgba(201,169,110,0.2)' },
                 '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.4)' },
                 '&.Mui-focused fieldset': { borderColor: '#c9a96e' },
@@ -152,7 +152,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
                 borderColor: 'rgba(201,169,110,0.15)',
                 fontFamily: 'var(--font-serif)',
                 fontSize: '0.85rem',
-                padding: '6px 20px',
+                padding: '8px 24px',
                 letterSpacing: '0.1em',
                 '&.Mui-selected': {
                   backgroundColor: 'rgba(201,169,110,0.12)',
@@ -177,7 +177,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
         </div>
 
       {/* 产品网格 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {filtered.map((product, index) => (
           <div key={product.id} style={{ animationDelay: `${index * 0.1}s` }}>
             <ProductCard

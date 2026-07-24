@@ -64,7 +64,7 @@ export default function SectionMeritSquare() {
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'center',
-          gap: { xs: 1.5, sm: 2 },
+          gap: { xs: 2, sm: 3 },
           maxWidth: '100%',
           mb: 1,
         }}
@@ -77,7 +77,7 @@ export default function SectionMeritSquare() {
             color: '#1a1a2e',
             fontFamily: 'var(--font-serif)',
             letterSpacing: '0.1em',
-            borderRadius: '2px',
+            borderRadius: '8px',
             px: 3,
             '&:hover': { backgroundColor: '#c9a96e' },
           }}
@@ -93,7 +93,7 @@ export default function SectionMeritSquare() {
             color: '#1a1a2e',
             fontFamily: 'var(--font-serif)',
             letterSpacing: '0.1em',
-            borderRadius: '2px',
+            borderRadius: '8px',
             px: 3,
             '&:hover': { backgroundColor: '#c9a96e' },
           }}

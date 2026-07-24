@@ -232,7 +232,7 @@ export default function LotteryCard() {
         </Box>
 
         {/* 按钮 */}
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Button
             variant="outlined"
             disabled={spinning || freeRemaining <= 0}
@@ -294,7 +294,7 @@ export default function LotteryCard() {
 const cardSx = {
   backgroundColor: 'rgba(22,33,62,0.5)',
   border: '1px solid rgba(201,169,110,0.2)',
-  borderRadius: '4px',
+  borderRadius: '12px',
   mb: 3,
 } as const;
 

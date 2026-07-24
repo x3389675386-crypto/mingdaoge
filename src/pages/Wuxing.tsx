@@ -124,14 +124,14 @@ export default function Wuxing() {
           五行体检
         </Typography>
         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.5)', letterSpacing: '0.2em', fontSize: '0.85rem', mt: 0.5 }}>
-          探本命五行 · 配手串材质
+          探本命五行 · 配五行好物
         </Typography>
       </Box>
 
       {/* 免责声明 */}
       <Paper
         elevation={0}
-        sx={{ p: 1.5, mb: 3, borderRadius: '4px', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)' }}
+        sx={{ p: 1.5, mb: 3, borderRadius: '12px', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)' }}
       >
         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(224,201,154,0.85)', fontSize: '0.78rem', textAlign: 'center' }}>
           ⚠ 本测算仅供娱乐参考，不构成任何专业命理 / 医疗 / 投资建议
@@ -139,7 +139,7 @@ export default function Wuxing() {
       </Paper>
 
       {/* 输入区 */}
-      <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: '4px', backgroundColor: 'rgba(26,26,46,0.4)', border: '1px solid rgba(201,169,110,0.1)' }}>
+      <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: '12px', backgroundColor: 'rgba(26,26,46,0.4)', border: '1px solid rgba(201,169,110,0.1)' }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flexWrap: 'wrap' }}>
           <TextField
             label="出生日期"
@@ -179,7 +179,7 @@ export default function Wuxing() {
             fontFamily: 'var(--font-serif)',
             letterSpacing: '0.15em',
             py: 1.1,
-            borderRadius: '2px',
+            borderRadius: '8px',
             '&:hover': { backgroundColor: '#c9a96e' },
           }}
         >
@@ -189,7 +189,7 @@ export default function Wuxing() {
 
       {/* 结果区 */}
       {result && (
-        <Paper elevation={0} sx={{ p: 3, borderRadius: '4px', backgroundColor: 'rgba(22,33,62,0.5)', border: '1px solid rgba(201,169,110,0.18)' }}>
+        <Paper elevation={0} sx={{ p: 3, borderRadius: '12px', backgroundColor: 'rgba(22,33,62,0.5)', border: '1px solid rgba(201,169,110,0.18)' }}>
           {/* 四柱 */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mb: 3 }}>
             {[result.year, result.month, result.day, ...(result.hour ? [result.hour] : [])].map((p, i) => (
@@ -247,7 +247,7 @@ export default function Wuxing() {
                   textAlign: 'center',
                   minWidth: 88,
                   p: 1.2,
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   backgroundColor: 'rgba(26,26,46,0.5)',
                   border: '1px solid rgba(201,169,110,0.15)',
                 }}

@@ -86,7 +86,7 @@ export default function Oracle() {
   };
 
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 4, md: 6 } }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 6, md: 9 } }}>
       {/* 标题 */}
       <Box sx={{ textAlign: 'center', mb: 3 }}>
         <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: { xs: '2rem', md: '2.6rem' }, color: '#c9a96e' }}>
@@ -137,7 +137,7 @@ export default function Oracle() {
               color: '#1a1a2e',
               fontFamily: 'var(--font-serif)',
               letterSpacing: '0.15em',
-              px: 4, py: 1.1, borderRadius: '2px',
+              px: 4, py: 1.3, borderRadius: '8px',
               '&:hover': { backgroundColor: '#c9a96e' },
               '&:disabled': { backgroundColor: 'rgba(201,169,110,0.3)', color: 'rgba(26,26,46,0.6)' },
             }}
@@ -158,7 +158,7 @@ export default function Oracle() {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
+            p: 4,
             borderRadius: '4px',
             backgroundColor: 'rgba(22,33,62,0.5)',
             border: `1px solid ${LEVEL_COLOR[lot.level]}55`,

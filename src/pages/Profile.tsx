@@ -216,9 +216,9 @@ export default function Profile() {
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 4, md: 6 },
+              p: { xs: 5, md: 7 },
               textAlign: 'center',
-              borderRadius: '4px',
+              borderRadius: '12px',
               backgroundColor: 'rgba(22,33,62,0.85)',
               border: '1px solid rgba(201,169,110,0.15)',
             }}
@@ -266,12 +266,12 @@ export default function Profile() {
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(22,33,62,0.9) 100%)' }}>
-      <Container maxWidth="md" sx={{ py: { xs: 6, md: 9 } }}>
+      <Container maxWidth="md" sx={{ py: { xs: 8, md: 12 } }}>
         <Paper
           elevation={0}
           sx={{
             maxWidth: '100%',
-            p: { xs: 3, md: 6 },
+            p: { xs: 4, md: 7 },
             borderRadius: '4px',
             backgroundColor: 'rgba(22,33,62,0.85)',
             border: '1px solid rgba(201,169,110,0.15)',
@@ -409,7 +409,7 @@ export default function Profile() {
                   py: 1,
                   backgroundColor: 'rgba(201,169,110,0.06)',
                   border: '1px solid rgba(201,169,110,0.12)',
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   fontFamily: 'monospace',
                   color: '#c9a96e',
                   fontSize: '0.8rem',
@@ -611,8 +611,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Box
       sx={{
-        mb: 3,
-        pb: 3,
+        mb: 4,
+        pb: 4,
         borderBottom: '1px solid rgba(201,169,110,0.1)',
         '&:last-of-type': { borderBottom: 'none', mb: 0, pb: 0 },
       }}

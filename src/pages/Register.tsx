@@ -73,7 +73,7 @@ export default function Register() {
   return (
     <AuthCard
       title="注册明道阁"
-      subtitle="结缘手串 · 以文会友"
+      subtitle="结缘好物 · 以文会友"
       footer={
         <Box sx={{ color: 'rgba(245,240,235,0.5)', fontSize: '0.85rem' }}>
           已有账号？{' '}

@@ -113,14 +113,11 @@ export default function Navbar() {
             >
               明道阁
             </span>
-            <span className="hidden lg:inline text-xs text-gold/50 tracking-widest mt-1">
-              · 新中式手串
-            </span>
           </a>
 
           {/* 桌面端导航链接 */}
           {!isMobile && (
-            <nav className="flex-1 flex justify-center gap-7 md:gap-9">
+            <nav className="flex-1 flex justify-center gap-8 md:gap-12">
               {displayLinks.map((link) => (
                 <a
                   key={link.href}
@@ -143,7 +140,7 @@ export default function Navbar() {
           )}
 
           {/* 右侧操作区 */}
-          <div className="flex items-center gap-1 ml-auto">
+          <div className="flex items-center gap-2 ml-auto">
             {/* 联系客服快捷按钮 */}
             <Tooltip title={`联系客服（${ADMIN_NAME}）`}>
               <IconButton

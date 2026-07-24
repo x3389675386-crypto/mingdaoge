@@ -8,7 +8,7 @@ import DailyFortune from '../components/DailyFortune';
 
 export default function Daily() {
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 4, md: 6 } }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 6, md: 9 } }}>
       <DailyFortune />
     </Box>
   );

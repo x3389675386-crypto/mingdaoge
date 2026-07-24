@@ -3,7 +3,7 @@ import { GoldDivider, CloudPattern, GreekKeyBorder } from './ChinesePattern';
 
 export default function About() {
   return (
-    <section id="about" className="relative py-16 md:py-24 px-4 md:px-8 overflow-hidden">
+    <section id="about" className="relative py-20 md:py-28 px-4 md:px-8 overflow-hidden">
       {/* 背景装饰 */}
       <CloudPattern className="absolute top-8 right-8 opacity-20 scale-75" />
       <CloudPattern className="absolute bottom-16 left-4 opacity-15 scale-50" />
@@ -35,7 +35,7 @@ export default function About() {
         </div>
 
         {/* 品牌故事 */}
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-14">
           {/* 左侧 —— 品牌理念 */}
           <div>
             <Typography
@@ -58,7 +58,7 @@ export default function About() {
                 mb: 3,
               }}
             >
-              我们扎根于新中式美学，从千年文脉中汲取灵感。每一款手串，从选材到穿制，皆由匠人手工完成。不追求数量，只在乎每一串的品质与灵魂。
+              我们扎根于东方生活美学，从千年文脉中汲取灵感。每一件器物，从选材到制作，皆由匠人手工完成。不追求数量，只在乎每一件的品质与灵魂。
             </Typography>
             <Typography
               sx={{
@@ -73,7 +73,7 @@ export default function About() {
           </div>
 
           {/* 右侧 —— 三大承诺 */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {[
               {
                 icon: '木',
@@ -97,7 +97,7 @@ export default function About() {
                   display: 'flex',
                   gap: 2.5,
                   padding: '20px',
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   border: '1px solid rgba(201,169,110,0.08)',
                   backgroundColor: 'rgba(22,33,62,0.4)',
                   transition: 'all 0.3s ease',
