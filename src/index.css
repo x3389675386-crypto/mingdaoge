@@ -90,6 +90,31 @@ body {
   animation: shimmer 3s ease-in-out infinite;
 }
 
+/* ===== 求签摇签抖动动画 ===== */
+@keyframes oracleShake {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-9deg); }
+  30% { transform: rotate(8deg); }
+  45% { transform: rotate(-7deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-4deg); }
+  90% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-oracle-shake {
+  animation: oracleShake 0.8s ease-in-out;
+}
+
+/* ===== 每日运势生肖运势小卡片悬浮 ===== */
+.daily-zodiac-card {
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.daily-zodiac-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(201, 169, 110, 0.45) !important;
+}
+
 /* ===== MUI Dialog 覆盖层样式 ===== */
 .MuiBackdrop-root {
   background-color: rgba(15, 15, 30, 0.85) !important;

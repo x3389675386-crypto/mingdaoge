@@ -8,6 +8,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useNavigate } from 'react-router-dom';
 import CheckinCard from '../../components/CheckinCard';
+import DailyFortune from '../../components/DailyFortune';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SectionMeritSquare() {
@@ -105,6 +106,11 @@ export default function SectionMeritSquare() {
       {/* 签到卡片（完整形态，显眼展示） */}
       <Box sx={{ maxWidth: 480, mx: 'auto', mt: 3 }}>
         <CheckinCard />
+      </Box>
+
+      {/* 每日运势 / 黄历卡：与签到卡并列，强化每日回访钩子 */}
+      <Box sx={{ maxWidth: 480, mx: 'auto', mt: 2 }}>
+        <DailyFortune />
       </Box>
     </Box>
   );

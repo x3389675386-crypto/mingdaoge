@@ -29,6 +29,11 @@ const ChatPage = lazy(() => import('./components/ChatPage'));
 const TaskHall = lazy(() => import('./pages/TaskHall'));
 const MyTasks = lazy(() => import('./pages/MyTasks'));
 
+/** 一期增量：五行体检 / 求签 / 每日运势（均为重路由，走 lazy 拆包） */
+const Wuxing = lazy(() => import('./pages/Wuxing'));
+const Oracle = lazy(() => import('./pages/Oracle'));
+const Daily = lazy(() => import('./pages/Daily'));
+
 /** 首屏下方区块与交互弹窗：静态 import 改为 lazy，减小首屏 bundle */
 const SectionDaoTreasury = lazy(() => import('./components/front/SectionDaoTreasury'));
 const SectionMeritSquare = lazy(() => import('./components/front/SectionMeritSquare'));
@@ -170,6 +175,9 @@ export default function App() {
                           <Route path="/verify-email" element={<VerifyEmail />} />
                           <Route path="/tasks" element={<TaskHall />} />
                           <Route path="/tasks/mine" element={<MyTasks />} />
+                          <Route path="/wuxing" element={<Wuxing />} />
+                          <Route path="/oracle" element={<Oracle />} />
+                          <Route path="/daily" element={<Daily />} />
                         </Routes>
                       </Suspense>
                     </ErrorBoundary>

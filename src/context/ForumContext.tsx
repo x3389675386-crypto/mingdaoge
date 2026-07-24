@@ -5,6 +5,7 @@ import { grantDailyMerit } from '../lib/task';
 import { containsProfanity, getProfanityWarning } from '../utils/profanityFilter';
 import { ensureGuestId } from '../lib/guestIdentity';
 import { claimPalmistryReward, PALMIRSTRY_CATEGORY, type PalmistryClaimResult } from '../lib/palmistry';
+import { fetchAvatarsByGuestIds } from '../lib/realtimeAvatar';
 import { useAuth } from './AuthContext';
 
 /** 新建帖子入参（支持功法电子书上传） */
@@ -41,6 +42,8 @@ interface ForumContextValue {
   palmistryClaim: PalmistryClaimResult | null;
   /** 清除看手相领奖结果 */
   clearPalmistryClaim: () => void;
+  /** 实时头像映射：{ guest_id: avatar_url }（查 profiles 当前值，覆盖老帖快照；空则回退 author_avatar_url / 首字母） */
+  avatarByGuestId: Record<string, string>;
 }
 
 const ForumContext = createContext<ForumContextValue | null>(null);
@@ -88,6 +91,8 @@ export function ForumProvider({ children }: { children: ReactNode }) {
   const [lastWarning, setLastWarning] = useState<string | null>(null);
   /** 看手相领奖结果（发帖后填充，供 ForumPage 弹 Toast） */
   const [palmistryClaim, setPalmistryClaim] = useState<PalmistryClaimResult | null>(null);
+  /** 实时头像映射（按 guest_id） */
+  const [avatarByGuestId, setAvatarByGuestId] = useState<Record<string, string>>({});
 
   /** 加载动态分类（forum_categories） */
   const loadCategories = useCallback(async () => {
@@ -141,7 +146,13 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPosts((data || []).map(mapDbToPost));
+      const mapped = (data || []).map(mapDbToPost);
+      setPosts(mapped);
+
+      // 头像实时化：批量查 profiles.guest_id → avatar_url，覆盖老帖快照头像。
+      // 失败（含 050 未执行）静默降级，map 保持空，展示层回退 author_avatar_url / 首字母。
+      const guestIds = mapped.map((p) => p.guest_id);
+      void fetchAvatarsByGuestIds(guestIds).then(setAvatarByGuestId);
 
       // 功法电子书元信息（公开读）
       const { data: mData, error: mErr } = await supabase
@@ -408,6 +419,7 @@ export function ForumProvider({ children }: { children: ReactNode }) {
         lastWarning,
         palmistryClaim,
         clearPalmistryClaim: () => setPalmistryClaim(null),
+        avatarByGuestId,
       }}
     >
       {children}

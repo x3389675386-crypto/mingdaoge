@@ -94,7 +94,7 @@ const FIXED_TUTORIALS: GongfaTutorial[] = [
 ];
 
 export default function ForumPage() {
-  const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning, palmistryClaim, clearPalmistryClaim } = useForum();
+  const { posts, loading, addPost, deletePost, likePost, hasLiked, categories, lastWarning: forumWarning, palmistryClaim, clearPalmistryClaim, avatarByGuestId } = useForum();
   const { commentsByPostId } = useComments();
   const { isAdmin, isAuthenticated, profile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -582,7 +582,11 @@ export default function ForumPage() {
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1.5, flexWrap: 'wrap', rowGap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                        <UserAvatar name={post.author_nickname || post.author} avatarUrl={post.author_avatar_url} size={24} />
+                        <UserAvatar
+                          name={post.author_nickname || post.author}
+                          avatarUrl={avatarByGuestId[post.guest_id ?? ''] || post.author_avatar_url}
+                          size={24}
+                        />
                         <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.6)', fontSize: '0.8rem' }}>
                           {post.author_nickname || post.author}
                         </Typography>

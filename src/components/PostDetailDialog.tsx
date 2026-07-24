@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -24,6 +24,7 @@ import { useForum } from '../context/ForumContext';
 import { useAuth } from '../context/AuthContext';
 import PrivateChatButton from './PrivateChatButton';
 import UserAvatar from './UserAvatar';
+import { fetchAvatarsByGuestIds } from '../lib/realtimeAvatar';
 import DownloadIcon from '@mui/icons-material/Download';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 
@@ -46,12 +47,32 @@ interface PostDetailDialogProps {
 }
 
 export default function PostDetailDialog({ open, onClose, post }: PostDetailDialogProps) {
-  const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
-  const { likePost, posts: forumPosts, gongfaMaterials, hasLiked } = useForum();
-  const { isAuthenticated, profile } = useAuth();
-  const [newComment, setNewComment] = useState({ content: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [commentError, setCommentError] = useState('');
+const { commentsByPostId, addComment, deleteComment, lastWarning } = useComments();
+const { likePost, posts: forumPosts, gongfaMaterials, hasLiked, avatarByGuestId } = useForum();
+const { isAuthenticated, profile } = useAuth();
+const [newComment, setNewComment] = useState({ content: '' });
+const [submitting, setSubmitting] = useState(false);
+const [commentError, setCommentError] = useState('');
+/** 实时头像映射（合并 Context 中帖子级映射 + 评论级按需查询），key = guest_id */
+const [liveAvatarMap, setLiveAvatarMap] = useState<Record<string, string>>(avatarByGuestId);
+
+/**
+ * 评论区头像实时化：收集本帖评论 guest_id，批量查 profiles 当前头像，
+ * 与 Context 帖子级映射合并。失败（含 050 未执行）静默降级，回退首字母。
+ */
+useEffect(() => {
+  if (!post) return;
+  const ids = [post.guest_id, ...commentsByPostId(post.id).map((c) => c.guest_id)];
+  let active = true;
+  void fetchAvatarsByGuestIds(ids).then((fetched) => {
+    if (!active) return;
+    setLiveAvatarMap({ ...avatarByGuestId, ...fetched });
+  });
+  return () => {
+    active = false;
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [post?.id]);
 
   if (!post) return null;
 
@@ -184,7 +205,11 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
         {/* 作者 & 时间 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <UserAvatar name={post.author_nickname || post.author} avatarUrl={post.author_avatar_url} size={28} />
+            <UserAvatar
+              name={post.author_nickname || post.author}
+              avatarUrl={liveAvatarMap[post.guest_id ?? ''] || post.author_avatar_url}
+              size={28}
+            />
             <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.7)', fontSize: '0.9rem', fontWeight: 600 }}>
               {post.author_nickname || post.author}
             </Typography>
@@ -346,7 +371,7 @@ export default function PostDetailDialog({ open, onClose, post }: PostDetailDial
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <UserAvatar name={comment.author} size={22} />
+                    <UserAvatar name={comment.author} avatarUrl={liveAvatarMap[comment.guest_id ?? '']} size={22} />
                     <Typography
                       sx={{
                         fontFamily: 'var(--font-serif)',
