@@ -31,6 +31,7 @@ import { useAuth } from '../context/AuthContext';
 import { listExchangeItems } from '../lib/exchange';
 import type { ExchangeItem, ItemType } from '../types';
 import Footer from '../components/Footer';
+import LotteryCard from '../components/LotteryCard';
 
 /** 兑换项类型图标 */
 const itemIcon: Record<ItemType, ReactElement> = {
@@ -132,6 +133,9 @@ export default function ExchangePage() {
   return (
     <>
       <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+        {/* 抽奖区块（二期新增，置于兑换中心顶部；功能未部署时自动降级提示，不影响其它功能） */}
+        <LotteryCard />
+
         {/* 标题 + 余额 */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography sx={{ fontFamily: 'var(--font-calligraphy)', fontSize: '2.2rem', color: '#c9a96e' }}>兑换中心</Typography>

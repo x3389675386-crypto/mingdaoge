@@ -33,3 +33,23 @@ export async function upsertSiteSetting(key: string, value: number): Promise<voi
     .upsert({ key, value }, { onConflict: 'key' });
   if (error) throw error;
 }
+
+/** 读取结构化（jsonb）配置项，失败回退 fallback（对应 070 新增的 value_json 列） */
+export async function getSiteSettingJson<T>(key: string, fallback: T): Promise<T> {
+  if (!isSupabaseConfigured) return fallback;
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('value_json')
+      .eq('key', key)
+      .maybeSingle();
+    if (error) {
+      console.warn('[明道阁] 读取配置JSON失败:', key, error.message);
+      return fallback;
+    }
+    return data?.value_json != null ? (data.value_json as T) : fallback;
+  } catch (e) {
+    console.warn('[明道阁] 读取配置JSON异常:', key, e);
+    return fallback;
+  }
+}

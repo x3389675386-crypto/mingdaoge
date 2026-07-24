@@ -34,6 +34,9 @@ const Wuxing = lazy(() => import('./pages/Wuxing'));
 const Oracle = lazy(() => import('./pages/Oracle'));
 const Daily = lazy(() => import('./pages/Daily'));
 
+/** 二期增量：身份晋升权益页（重路由，走 lazy 拆包） */
+const Identity = lazy(() => import('./pages/Identity'));
+
 /** 首屏下方区块与交互弹窗：静态 import 改为 lazy，减小首屏 bundle */
 const SectionDaoTreasury = lazy(() => import('./components/front/SectionDaoTreasury'));
 const SectionMeritSquare = lazy(() => import('./components/front/SectionMeritSquare'));
@@ -178,6 +181,7 @@ export default function App() {
                           <Route path="/wuxing" element={<Wuxing />} />
                           <Route path="/oracle" element={<Oracle />} />
                           <Route path="/daily" element={<Daily />} />
+                          <Route path="/identity" element={<Identity />} />
                         </Routes>
                       </Suspense>
                     </ErrorBoundary>

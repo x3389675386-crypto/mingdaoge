@@ -103,6 +103,8 @@ export default function ForumPage() {
     const cat = searchParams.get('cat');
     return cat ? cat : 'all';
   });
+  /** 搜索关键词（按 title / content / author nickname 前端 includes 过滤，避免频繁请求） */
+  const [searchText, setSearchText] = useState('');
   const [sortMode, setSortMode] = useState<'latest' | 'hot'>('latest');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [gongfaOpen, setGongfaOpen] = useState(false);
@@ -189,15 +191,27 @@ export default function ForumPage() {
   }, [activeCategories]);
 
   const displayPosts = useMemo(() => {
-    const list = activeCategory === 'all' ? posts : posts.filter((p) => p.category === activeCategory);
-    const sorted = [...list];
+    // 1) 分类过滤（兼容 palmistry 等动态分类）
+    const byCat = activeCategory === 'all' ? posts : posts.filter((p) => p.category === activeCategory);
+    // 2) 关键词过滤（title / content / author nickname，大小写不敏感）
+    const kw = searchText.trim().toLowerCase();
+    const filtered = kw
+      ? byCat.filter((p) => {
+          const hay = [p.title, p.content, p.author_nickname || p.author].join(' ').toLowerCase();
+          return hay.includes(kw);
+        })
+      : byCat;
+    const sorted = [...filtered];
     if (sortMode === 'latest') {
       sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else {
       sorted.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
     }
     return sorted;
-  }, [posts, activeCategory, sortMode]);
+  }, [posts, activeCategory, searchText, sortMode]);
+
+  /** 是否因搜索而空（已有帖子但匹配不到） */
+  const isSearchEmpty = searchText.trim().length > 0 && posts.length > 0 && displayPosts.length === 0;
 
   const getCategoryInfo = (value: string) =>
     activeCategories.find((c) => c.value === value) ||
@@ -378,6 +392,35 @@ export default function ForumPage() {
       </Box>
 
       <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+        {/* 搜索框（暗金风格，按标题/内容/作者昵称过滤） */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="搜索帖子标题 / 内容 / 作者…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <Box component="span" sx={{ color: 'rgba(201,169,110,0.6)', mr: 1, display: 'flex' }}>
+                  🔍
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                fontFamily: 'var(--font-serif)',
+                color: '#f5f0eb',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(22,33,62,0.5)',
+                '& fieldset': { borderColor: 'rgba(201,169,110,0.25)' },
+                '&:hover fieldset': { borderColor: 'rgba(201,169,110,0.5)' },
+                '&.Mui-focused fieldset': { borderColor: '#c9a96e' },
+              },
+              '& .MuiInputBase-input::placeholder': { color: 'rgba(245,240,235,0.4)', fontFamily: 'var(--font-serif)' },
+            }}
+          />
+        </Box>
+
         {/* 分类筛选 */}
         <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
           <Chip
@@ -516,9 +559,11 @@ export default function ForumPage() {
           </Typography>
         ) : displayPosts.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography sx={{ color: 'rgba(245,240,235,0.3)', fontSize: '3rem', mb: 2 }}>📝</Typography>
+            <Typography sx={{ color: 'rgba(245,240,235,0.3)', fontSize: '3rem', mb: 2 }}>{isSearchEmpty ? '🔍' : '📝'}</Typography>
             <Typography sx={{ color: 'rgba(245,240,235,0.4)', fontFamily: 'var(--font-serif)' }}>
-              还没有帖子，来做第一个发言的人吧！
+              {isSearchEmpty
+                ? `未找到与「${searchText.trim()}」相关的帖子，换个关键词试试~`
+                : '还没有帖子，来做第一个发言的人吧！'}
             </Typography>
           </Box>
         ) : (

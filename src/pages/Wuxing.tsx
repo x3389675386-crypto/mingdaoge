@@ -31,6 +31,7 @@ import {
   WUXING_COLOR,
   WUXING_LIST,
   SHICHEN,
+  wuxingPercentages,
   type BaziResult,
   type Wuxing,
 } from '../lib/bazi';
@@ -229,6 +230,74 @@ export default function Wuxing() {
                 </Typography>
               </Box>
             ))}
+          </Box>
+
+          {/* 命盘详情（二期新增）：四柱 + 对应十神 + 五行强弱条 */}
+          <Divider sx={{ borderColor: 'rgba(201,169,110,0.12)', mb: 2.5, mt: 1 }} />
+          <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#c9a96e', fontSize: '0.95rem', fontWeight: 600, mb: 1.5 }}>
+            命盘详情
+          </Typography>
+
+          {/* 四柱 + 十神 */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mb: 3 }}>
+            {[result.year, result.month, result.day, ...(result.hour ? [result.hour] : [])].map((p, i) => (
+              <Box
+                key={i}
+                sx={{
+                  textAlign: 'center',
+                  minWidth: 88,
+                  p: 1.2,
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(26,26,46,0.5)',
+                  border: '1px solid rgba(201,169,110,0.15)',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(201,169,110,0.6)', fontSize: '0.75rem', mb: 0.5 }}>
+                  {PILLAR_LABELS[i]}
+                </Typography>
+                <Typography sx={{ fontFamily: 'var(--font-calligraphy)', color: '#f5f0eb', fontSize: '1.5rem', lineHeight: 1 }}>
+                  {p.ganzhi}
+                </Typography>
+                <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.7rem', mt: 0.6 }}>
+                  天干 · {p.ganShishen || '—'}
+                </Typography>
+                <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.7rem' }}>
+                  地支 · {p.zhiShishen || '—'}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {/* 五行强弱条（百分比，纯 CSS 实现） */}
+          <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.7)', fontSize: '0.85rem', mb: 1 }}>
+            五行强弱
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, mb: 2 }}>
+            {(() => {
+              const pctMap = wuxingPercentages(result.counts);
+              return WUXING_LIST.map((w) => {
+                const pct = pctMap[w];
+                return (
+                <Box key={w} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Typography sx={{ fontFamily: 'var(--font-serif)', color: '#f5f0eb', fontSize: '0.9rem', width: 20 }}>{w}</Typography>
+                  <Box sx={{ flex: 1, height: 10, borderRadius: 5, backgroundColor: 'rgba(245,240,235,0.08)', overflow: 'hidden' }}>
+                    <Box
+                      sx={{
+                        width: `${pct}%`,
+                        height: '100%',
+                        backgroundColor: WUXING_COLOR[w],
+                        borderRadius: 5,
+                        transition: 'width 0.5s ease',
+                      }}
+                    />
+                  </Box>
+                  <Typography sx={{ fontFamily: 'var(--font-serif)', color: 'rgba(245,240,235,0.6)', fontSize: '0.8rem', width: 38, textAlign: 'right' }}>
+                    {pct}%
+                  </Typography>
+                </Box>
+              );
+            });
+            })()}
           </Box>
 
           {/* 日主 / 喜用神 */}

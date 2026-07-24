@@ -25,6 +25,7 @@ const navLinks = [
   { label: '五行', href: '/wuxing', isRoute: true },
   { label: '灵签', href: '/oracle', isRoute: true },
   { label: '每日', href: '/daily', isRoute: true },
+  { label: '身份', href: '/identity', isRoute: true },
   { label: '私聊', href: '/chat', isRoute: true },
   { label: '任务大厅', href: '/tasks', isRoute: true },
   { label: '关于', href: '#about', sectionId: 'about' },

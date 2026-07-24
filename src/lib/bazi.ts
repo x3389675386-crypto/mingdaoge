@@ -34,6 +34,12 @@ const GAN_WUXING: Wuxing[] = ['木', '木', '火', '火', '土', '土', '金', '
 /** 地支五行：子水丑土寅木卯木辰土巳火午火未土申金酉金戌土亥水 */
 const ZHI_WUXING: Wuxing[] = ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'];
 
+/** 天干阴阳：偶数索引为阳（甲丙戊庚壬），奇数索引为阴（乙丁己辛癸） */
+const GAN_YINYANG: ('阳' | '阴')[] = ['阳', '阴', '阳', '阴', '阳', '阴', '阳', '阴', '阳', '阴'];
+
+/** 地支本气阴阳（按本气天干定，民俗近似）：子癸阴 丑己阴 寅甲阳 卯乙阴 辰戊阳 巳丙阳 午丁阴 未己阴 申庚阳 酉辛阴 戌戊阳 亥壬阳 */
+const ZHI_BENQI_YINYANG: ('阳' | '阴')[] = ['阴', '阴', '阳', '阴', '阳', '阳', '阴', '阴', '阳', '阴', '阳', '阴'];
+
 /** 地支所主季节五行（四季月辰戌丑未归土，民俗近似） */
 const ZHI_SEASON: Wuxing[] = ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'];
 
@@ -71,6 +77,31 @@ const WO_SHENG: Record<Wuxing, Wuxing> = { 木: '火', 火: '土', 土: '金', �
 const KE_WO: Record<Wuxing, Wuxing> = { 木: '金', 火: '水', 土: '木', 金: '火', 水: '土' }; // 谁克我（官杀）
 const WO_KE: Record<Wuxing, Wuxing> = { 木: '土', 火: '金', 土: '水', 金: '木', 水: '火' }; // 我克（财）
 
+/**
+ * 十神（基于日主）计算。
+ * 关系（日主为我）：
+ *  同我 → 比肩(同阴阳) / 劫财(异阴阳)
+ *  我生 → 食神(同阴阳) / 伤官(异阴阳)
+ *  我克 → 正财(同阴阳) / 偏财(异阴阳)
+ *  克我 → 正官(同阴阳) / 七杀(异阴阳)
+ *  生我 → 正印(同阴阳) / 偏印(异阴阳)
+ */
+export function tenGod(
+  dayMaster: Wuxing,
+  dayMasterYY: '阳' | '阴',
+  target: Wuxing,
+  targetYY: '阳' | '阴'
+): string {
+  const same = dayMaster === target;
+  const sameYY = dayMasterYY === targetYY;
+  if (same) return sameYY ? '比肩' : '劫财';
+  if (WO_SHENG[dayMaster] === target) return sameYY ? '食神' : '伤官';
+  if (WO_KE[dayMaster] === target) return sameYY ? '正财' : '偏财';
+  if (KE_WO[dayMaster] === target) return sameYY ? '正官' : '七杀';
+  if (SHENG_WO[dayMaster] === target) return sameYY ? '正印' : '偏印';
+  return '未知';
+}
+
 /** 时辰表（用于 UI 选择） */
 export const SHICHEN = [
   { name: '子时', range: '23:00-00:59', zhiIndex: 0 },
@@ -87,11 +118,15 @@ export const SHICHEN = [
   { name: '亥时', range: '21:00-22:59', zhiIndex: 11 },
 ];
 
-/** 单柱结构 */
+/** 单柱结构（含十神标注，基于日主） */
 export interface Pillar {
   ganIndex: number;
   zhiIndex: number;
   ganzhi: string;
+  /** 天干对应十神（基于日主五行生克，可选，未算则为 undefined） */
+  ganShishen?: string;
+  /** 地支对应十神（基于日主五行生克，可选，未算则为 undefined） */
+  zhiShishen?: string;
 }
 
 /** 完整八字分析结果 */
@@ -168,6 +203,25 @@ function countWuxing(pillars: Pillar[]): Record<Wuxing, number> {
   return counts;
 }
 
+/**
+ * 五行强弱占比（百分比，整数，总和 100）。
+ * 供「命盘详情」区块绘制五行强弱条（纯 CSS，不引图表库）。
+ * @param counts 五行计数
+ * @param total 可选总分（默认按五计数之和）
+ */
+export function wuxingPercentages(
+  counts: Record<Wuxing, number>,
+  total?: number
+): Record<Wuxing, number> {
+  const sum = total ?? WUXING_LIST.reduce((acc, w) => acc + (counts[w] || 0), 0);
+  const denom = sum || 1;
+  const pct = {} as Record<Wuxing, number>;
+  for (const w of WUXING_LIST) {
+    pct[w] = Math.round(((counts[w] || 0) / denom) * 100);
+  }
+  return pct;
+}
+
 /** 简化去重 */
 function uniqueWuxing(arr: Wuxing[]): Wuxing[] {
   return Array.from(new Set(arr));
@@ -185,7 +239,21 @@ export function analyzeBazi(date: Date, withHour: boolean): BaziResult {
   const hour = withHour ? getHourGanZhi(date, day.ganIndex) : null;
 
   const pillars = [year, month, day, ...(hour ? [hour] : [])];
-  const counts = countWuxing(pillars);
+
+  // 为每柱天干 / 地支标注十神（基于日主五行与阴阳）
+  const dmYY = GAN_YINYANG[day.ganIndex];
+  const enrichPillar = (p: Pillar): Pillar => ({
+    ...p,
+    ganShishen: tenGod(dayMaster, dmYY, GAN_WUXING[p.ganIndex], GAN_YINYANG[p.ganIndex]),
+    zhiShishen: tenGod(dayMaster, dmYY, ZHI_WUXING[p.zhiIndex], ZHI_BENQI_YINYANG[p.zhiIndex]),
+  });
+  const yearD = enrichPillar(year);
+  const monthD = enrichPillar(month);
+  const dayD = enrichPillar(day);
+  const hourD = hour ? enrichPillar(hour) : null;
+
+  const counted = [yearD, monthD, dayD, ...(hourD ? [hourD] : [])];
+  const counts = countWuxing(counted);
 
   // 日主
   const dayMaster: Wuxing = GAN_WUXING[day.ganIndex];
@@ -226,10 +294,10 @@ export function analyzeBazi(date: Date, withHour: boolean): BaziResult {
     : `五行俱全，日主偏${strength}，可借喜用五行调和。`;
 
   return {
-    year,
-    month,
-    day,
-    hour,
+    year: yearD,
+    month: monthD,
+    day: dayD,
+    hour: hourD,
     dayMasterChar,
     dayMaster,
     strength,
