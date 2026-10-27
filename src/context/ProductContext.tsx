@@ -3,11 +3,29 @@ import type { Product, ProductCategory } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { products as seedProducts } from '../data/products';
 
+/** 请求超时（毫秒）：后端不可达时快速失败，触发本地兜底，避免长时间“空店” */
+const REQUEST_TIMEOUT_MS = 8000;
+
+/** 给 PromiseLike 加超时；超时则 reject，交由上层回退种子数据 */
+function withTimeout<T>(thenable: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    Promise.resolve(thenable),
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`后端请求超时（${Math.round(ms / 1000)}s），已切换本地示例数据`)),
+        ms
+      )
+    ),
+  ]);
+}
+
 /** 产品状态接口 */
 export interface ProductState {
   products: Product[];
   loading: boolean;
   error: string | null;
+  /** 数据来源：live=数据库实时数据；fallback=后端异常时回退到本地种子数据 */
+  dataSource: 'live' | 'fallback';
 }
 
 /** Context 值接口 */
@@ -55,6 +73,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<'live' | 'fallback'>('live');
 
   const refresh = useCallback(async () => {
     try {
@@ -64,59 +83,71 @@ export function ProductProvider({ children }: { children: ReactNode }) {
       if (!isSupabaseConfigured) {
         console.warn('[明道阁] Supabase 未配置，使用本地种子数据');
         setProducts(seedProducts);
+        setDataSource('fallback');
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('products')
-        .select('*')
-        .order('id', { ascending: true });
+      const { data, error: fetchError } = await withTimeout(
+        supabase
+          .from('products')
+          .select('*')
+          .order('id', { ascending: true }),
+        REQUEST_TIMEOUT_MS
+      );
 
       if (fetchError) {
         console.error('[明道阁] 加载产品失败:', fetchError);
         setError('加载产品失败: ' + fetchError.message);
         setProducts(seedProducts);
+        setDataSource('fallback');
         return;
       }
 
       // 如果数据库为空，初始化种子数据
       if (!data || data.length === 0) {
         console.log('[明道阁] 数据库为空，初始化种子数据...');
-        const { data: inserted, error: insertError } = await supabase
-          .from('products')
-          .insert(seedProducts.map((p) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            price: p.price,
-            description: p.description,
-            image_url: p.imageUrl || null,
-            status: p.status,
-            gradient: p.gradient,
-            material: p.material,
-            origin: p.origin,
-            diameter: p.diameter,
-          })))
-          .select();
+        const { data: inserted, error: insertError } = await withTimeout(
+          supabase
+            .from('products')
+            .insert(seedProducts.map((p) => ({
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              price: p.price,
+              description: p.description,
+              image_url: p.imageUrl || null,
+              status: p.status,
+              gradient: p.gradient,
+              material: p.material,
+              origin: p.origin,
+              diameter: p.diameter,
+            })))
+            .select(),
+          REQUEST_TIMEOUT_MS
+        );
 
         if (insertError) {
           console.error('[明道阁] 种子数据插入失败:', insertError);
           setError('初始化数据失败: ' + insertError.message);
           setProducts(seedProducts);
+          setDataSource('fallback');
           return;
         }
 
         console.log('[明道阁] 种子数据初始化成功，共', inserted?.length, '条');
         setProducts(inserted ? inserted.map(mapDbToProduct) : seedProducts);
+        setDataSource('live');
         return;
       }
 
       console.log('[明道阁] 从 Supabase 加载', data.length, '个产品');
       setProducts(data.map(mapDbToProduct));
+      setDataSource('live');
     } catch (err) {
       console.error('[明道阁] 产品加载异常:', err);
       setError(err instanceof Error ? err.message : '加载产品数据失败');
       setProducts(seedProducts);
+      setDataSource('fallback');
     } finally {
       setLoading(false);
     }
@@ -241,7 +272,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
   return (
     <ProductContext.Provider
       value={{
-        state: { products, loading, error },
+        state: { products, loading, error, dataSource },
         activeProducts,
         allProducts,
         nextId,

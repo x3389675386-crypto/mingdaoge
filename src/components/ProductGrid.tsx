@@ -30,7 +30,7 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('default');
   const [buyOpen, setBuyOpen] = useState(false);
-  const { activeProducts } = useProducts();
+  const { activeProducts, state } = useProducts();
 
   /** 计算顺序：分类过滤 → 搜索过滤 → 排序 */
   const filtered = useMemo(() => {
@@ -81,6 +81,22 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
           每一串，都是与自然的一次对话
         </Typography>
       </div>
+
+      {state.dataSource === 'fallback' && (
+        <div
+          className="mb-8 mx-auto max-w-[720px] rounded-xl px-5 py-3 text-center"
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '0.85rem',
+            color: '#f0d9a8',
+            background: 'rgba(201,169,110,0.10)',
+            border: '1px solid rgba(201,169,110,0.30)',
+            letterSpacing: '0.03em',
+          }}
+        >
+          ⚠ 暂时无法连接商品服务器，当前展示的是本地示例数据（可能不是最新商品）。请稍后刷新或联系店主。
+        </div>
+      )}
 
         {/* 搜索 + 排序 工具栏 */}
         <div className="flex flex-col sm:flex-row gap-4 mb-10 justify-between items-stretch sm:items-center">
@@ -190,8 +206,8 @@ export default function ProductGrid({ onDetail, onAddToCart }: ProductGridProps)
         ))}
       </div>
 
-      {/* 空状态 */}
-      {filtered.length === 0 && (
+      {/* 空状态（加载中不显示，避免误导） */}
+      {!state.loading && filtered.length === 0 && (
         <div className="text-center py-16 text-jade-white/30" style={{ fontFamily: 'var(--font-serif)' }}>
           {search.trim() ? '没有找到相关商品' : '此分类暂无产品'}
         </div>
